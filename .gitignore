@@ -1,0 +1,8 @@
+/venv
+/__MACOSX
+.iml
+.idea
+.DS_Store
+Projects.iml
+/__pycache__
+data.zip
