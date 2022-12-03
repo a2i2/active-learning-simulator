@@ -1,5 +1,7 @@
 # Simulator for Active Learning
 
+## Using the simulator
+
 
 ## Data handling
 
