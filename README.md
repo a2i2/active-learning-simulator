@@ -2,10 +2,41 @@
 
 ## Using the simulator
 
+### Running the program
+Ensure compressed data file is present in the working directory and in the correct [format](#compatible-datasets)
+
+Optional (named) arguments: specify algorithms and learning parameters
+- *confidence*
+  - value between 0 - 1, typically specifies the target recall
+- *model*
+  - Gaussian Naive Bayes ([NB](./model.py))
+  - Logistic Regression ([LR](./model.py))
+  - Linear Support Vector Classification ([SVC](./model.py))
+  - Multilayer perceptron ([MLP](./model.py))
+- *selector*
+  - Highest confidence selector ([*HighestConfidence*](./selector.py))
+  - Lowest entropy selector ([*LowestEntropy*](./selector.py))
+  - Weighted highest confidence selector ([*WeightedSample*](./selector.py))
+- *stopper*
+  - Highest confidence selector ([*HighestConfidence*](./selector.py))
+  - Lowest entropy selector ([*LowestEntropy*](./selector.py))
+  - Weighted highest confidence selector ([*WeightedSample*](./selector.py))
+- *evaluator*
+  - [*True*](./selector.py): enable evalautor object to record training
+  - [*False*](./selector.py): disable evaluator object (faster operation)
+
+Example command line instruction:
+- ./main.py --confidence=0.95 --model=NB --selector=HighestConfidence --stopper=Statistical --evaluator=True
+
+
+### Implementing algorithms
+To add algorithms for the model, selector, or stopper, refer to class specification sections [below](#al-model-framework). 
+
+
 
 ## Data handling
 
-### Dataset used
+### Compatible datasets
 Systematic review datasets obtained from:
 https://github.com/asreview/systematic-review-datasets
 
@@ -39,11 +70,8 @@ Each model should include the following methods:
 - score: method for outputting evaluation metrics, not strictly requried
 - reset: reset model parameters
 
-Currently supported machine learning models include:
-- Gaussian Naive Bayes (NB)
-- Logistic Regression (LR)
-- Linear Support Vector Classification (SVC)
-- Multilayer perceptron (MLP)
+
+
 
 ### Active learning sample selection
 Selector object handles the selection of sample istances during Active Learning.
@@ -54,11 +82,10 @@ Each selector should include the following methods:
 - reset: resets any selector parameters
 
 Currently supported machine learning models include:
-- Highest confidence selector (HighestConfidence)
-  - selects the instances that most confidently suggest a relevant document
-- Lowest entropy selector (LowestEntropy)
-- Weighted highest confidence selector (WeightedSample)
-  - gives higher weightings (probability for selection) to instances with higher prediction scores for relevancy
+- Highest confidence selector: selects the instances that most confidently suggest a relevant document
+- Lowest entropy selector
+- Weighted highest confidence selector: gives higher weightings (probability for selection) to instances with higher prediction scores for relevancy
+
 
 ### Active learning stopping criteria
 Stopper object handles the early stopping of Active Learning.
@@ -69,9 +96,10 @@ Each stopper should include the following methods:
 - reset: resets any stopper parameters
 
 Currently supported stopping criteria algorithms include:
-- Sample size (SampleSize): stops AL when the sample no longer contains relevant documents (naive)
-- Sample proportion (SameProportion): measures the class distribution from random sampling and determines an estimate for the total number of relevant documents in the dataset. When this value is reached by the active learner, AL training terminates
-- Recall estimate statistical analysis (Statistical): uses hypergeometric sampling to determine a p-value as the stopping criteria. Terminates AL when the target recall has likely been reached
+- Sample size: stops AL when the sample no longer contains relevant documents (naive)
+- Sample proportion: measures the class distribution from random sampling and determines an estimate for the total number of relevant documents in the dataset. When this value is reached by the active learner, AL training terminates
+- Recall estimate statistical analysis: uses hypergeometric sampling to determine a p-value as the stopping criteria. Terminates AL when the target recall has likely been reached
+
 
 ### Active learning handler
 Handles the AL training loops for systematic review labelling. Training involves initialisation of parameters, initial sampling using the chosen selector's *initial_select* method, main AL training loop using the chosen ML model's predictions and chosen selector's *select* method under the chosen stopper's *stopping_criteria*.
