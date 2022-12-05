@@ -24,6 +24,12 @@ Optional (named) arguments: specify algorithms and learning parameters
 - *evaluator*
   - [*True*](./selector.py): enable evalautor object to record training
   - [*False*](./selector.py): disable evaluator object (faster operation)
+- *verbose*: list the subsystems to produce a verbose output, out of:
+  - model
+  - selector
+  - stopper
+  - evaluator
+  - active_learner
 
 Example command line instruction:
 - <code>./main.py --confidence 0.95 --model NB --selector HighestConfidence --stopper Statistical --evaluator True --verbose selector evaluator</code>
@@ -41,11 +47,16 @@ Systematic review datasets obtained from:
 https://github.com/asreview/systematic-review-datasets
 
 Currently support format:
-- CSV data with columns 'record_id', 'title', 'abstract', 'label_included'.
-- Title and abstract are used as the raw features, 'label_included' specifies whether an instance is relevant.
+- CSV data with columns 'record_id', 'title', 'abstract', 'label_included'
+- 'title' and 'abstract' are used as the raw features in new column named 'x'
+- 'label_included' specifies whether an instance is *irrelevant* (class 0) or *relevant* (class 1)
+
+[Data loading](./data_extraction.py)
+- extracts .csv datasets from compressed .zip
+
 
 ### Data preparation
-Data cleaning
+[Data cleaning](./data_extraction.py)
 - removal of English stopwords
 - removal of punctuation
 - removal of repeated characters (maybe not necessary for academic literature?)
@@ -54,7 +65,7 @@ Data cleaning
 Tokenisation, stemming and lemmatisation
 - reduces word variations by only considering root lexemes
 
-### Feature extraction using TF-IDF
+### Feature extraction using [TF-IDF](./tfidf.py)
 Creates a TF-IDF vectoriser to extract features from the raw data. 
 
 
