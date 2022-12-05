@@ -6,6 +6,8 @@
 Ensure compressed data file is present in the working directory and in the correct [format](#compatible-datasets)
 
 Optional (named) arguments: specify algorithms and learning parameters
+- *data*
+  - name of the directory containing the csv datasets
 - *confidence*
   - value between 0 - 1, typically specifies the target recall
 - *model*
@@ -32,7 +34,7 @@ Optional (named) arguments: specify algorithms and learning parameters
   - active_learner
 
 Example command line instruction:
-- <code>./main.py --confidence 0.95 --model NB --selector HighestConfidence --stopper Statistical --evaluator True --verbose selector evaluator</code>
+- <code>./main.py -data datasets --confidence 0.95 --model NB --selector HighestConfidence --stopper Statistical --evaluator True --verbose stopper evaluator</code>
 
 
 ### Implementing algorithms
