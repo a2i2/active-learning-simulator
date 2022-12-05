@@ -26,7 +26,7 @@ Optional (named) arguments: specify algorithms and learning parameters
   - [*False*](./selector.py): disable evaluator object (faster operation)
 
 Example command line instruction:
-- <code>./main.py --confidence=0.95 --model=NB --selector=HighestConfidence --stopper=Statistical --evaluator=True</code>
+- <code>./main.py --confidence 0.95 --model NB --selector HighestConfidence --stopper Statistical --evaluator True --verbose selector evaluator</code>
 
 
 ### Implementing algorithms
