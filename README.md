@@ -7,7 +7,7 @@ Ensure compressed data file is present in the working directory and in the corre
 
 Optional (named) arguments: specify algorithms and learning parameters
 - *data*
-  - name of the directory containing the csv datasets
+  - name of the directory or file containing the datasets (either csv or pkl)
 - *confidence*
   - value between 0 - 1, typically specifies the target recall
 - *model*
@@ -49,12 +49,13 @@ Systematic review datasets obtained from:
 https://github.com/asreview/systematic-review-datasets
 
 Currently support format:
-- CSV data with columns 'record_id', 'title', 'abstract', 'label_included'
+- raw CSV data with columns 'record_id', 'title', 'abstract', 'label_included'
 - 'title' and 'abstract' are used as the raw features in new column named 'x'
 - 'label_included' specifies whether an instance is *irrelevant* (class 0) or *relevant* (class 1)
 
 [Data loading](./data_extraction.py)
 - extracts .csv datasets from compressed .zip
+- can also extract precomputed TF-IDF .pkl datasets
 
 
 ### Data preparation
