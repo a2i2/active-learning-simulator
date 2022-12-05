@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from active_learner import ActiveLearner
-from data_extraction import load_datasets, process_file_string, extract_datasets
+from data_extraction import process_file_string, get_datasets
 from evaluator import *
 
 from model import *
@@ -21,6 +21,7 @@ working_directory = './'
 load = True
 
 
+
 def main():
     try:
         _create_unverified_https_context = ssl._create_unverified_context
@@ -32,18 +33,8 @@ def main():
     params = handle_args()
     print(params)
 
-    # perform TF-IDF feature extraction
-    if not load:
-        datasets = load_datasets(working_directory, 'data')
-        for i, dataset in enumerate(datasets):
-            datasets[i] = compute_TFIDF(dataset, 1000)
-            datasets[i].to_pickle('./datasets/dataset_' + str(i) + '.pkl')
-        print(datasets)
-    # load precomputed TF-IDF dataset
-    elif load:
-        extract_datasets('datasets', working_directory)
-        datasets = load_pkl_datasets(working_directory, 'datasets')
-        print(datasets)
+    datasets = get_datasets(params['data'][0], params['data'][1], working_directory)
+    print(datasets)
 
     evaluators = []
     stoppers = []
@@ -74,6 +65,8 @@ def main():
 def handle_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-data', help='Name of datasets directory',
+                        default='datasets')
     parser.add_argument('--confidence', type=float, help='Confidence level, target recall',
                         default=0.95)
     parser.add_argument("--model", help="Base machine learning model: <model name> <model parameters (optional)>",
@@ -89,6 +82,8 @@ def handle_args():
     parser.add_argument("--verbose", help="Specify which subsystems should produce verbose outputs",
                         default='evaluator', nargs='*')
     args = parser.parse_args()
+
+    data_name, data_file_type = process_file_string(args.data)
 
     confidence = args.confidence
 
@@ -124,7 +119,8 @@ def handle_args():
     evaluator_verbosity = 'evaluator' in verbosity_args
     active_learner_verbosity = 'active_learner' in verbosity_args
 
-    params = {'confidence': confidence,
+    params = {'data': (data_name, data_file_type),
+              'confidence': confidence,
               'model': (model_, model_params, model_verbosity),
               'selector': (selector_, selector_params, selector_verbosity),
               'stopper': (stopper_, stopper_params, stopper_verbosity),
@@ -136,11 +132,11 @@ def handle_args():
 def run_model(data, params):
     N = len(data['train'])
     batch_size = int(0.03 * N)
+    # TODO different batch sizes? as a parameter
 
     model_AL = params['model'][0](*params['model'][1])
     selector = params['selector'][0](batch_size, params['confidence'], *params['selector'][1], verbose=params['selector'][2])
     stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1], verbose=params['stopper'][2])
-    # stopper = Statistical(N, 0.95, 0.95, verbose=True)
 
     evaluator = None
     if params['evaluator']:
@@ -155,14 +151,7 @@ def run_model(data, params):
     return evaluator, stopper
 
 
-def load_pkl_datasets(working_directory, datasets_name):
-    datasets = []
-    for data_path in os.listdir(working_directory + datasets_name):
-        (name, file_type) = process_file_string(data_path)
-        if file_type == 'pkl':
-            data = pd.read_pickle(datasets_name + '/' + name + '.' + file_type)
-            datasets.append(data)
-    return datasets
+
 
 
 if __name__ == '__main__':

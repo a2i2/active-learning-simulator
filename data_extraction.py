@@ -2,25 +2,43 @@ import re
 import zipfile
 import os
 import pandas as pd
+from tfidf import compute_TFIDF
 
 
-def load_datasets(working_directory, datasets_name):
+def get_datasets(data_name, data_file_type, working_directory):
     """
-    Loads all datasets from zipped datasets file
-    :param working_directory: path containing the datasets compressed file
-    :param datasets_name: name of the compressed datasets file
-    :return: list of pandas DataFrames containing all extracted datasets
+    Get data from different formats and file types. Loads from .zip, directory with csv datas, directory with pkl datas
+    :param data_name: name of the data directory or file
+    :param data_file_type: string name of the data file type (None if directory)
+    :param working_directory: working directory of the program
+    :return: list of datasets, including feature extractions (namely TF-IDF)
     """
-    extract_datasets(datasets_name, working_directory)
+    # extract compressed datasets
+    if data_file_type == 'zip':
+        extract_datasets(data_name, working_directory)
+    # load each dataset
     datasets = []
-    for data_path in os.listdir(working_directory + datasets_name):
+    for data_path in os.listdir(working_directory + data_name):
         (name, file_type) = process_file_string(data_path)
+        # load csv dataset
         if file_type == 'csv':
-            data = load_csv_data(working_directory + datasets_name + '/' + data_path, 'record_id',
+            data = load_csv_data(working_directory + data_name + '/' + data_path, 'record_id',
                                  ['title', 'abstract'], 'label_included')
             data['x'] = data['title'] + data['abstract']
             data.rename(columns={'label_included': 'y'}, inplace=True)
-            datasets.append(data)
+        # load pkl dataset
+        elif file_type == 'pkl':
+            data = pd.read_pickle(data_name + '/' + name + '.' + file_type)
+        # skip unsupported data types
+        else:
+            print('WARNING:', file_type, 'is an unsupported data type')
+            continue
+        # compute TF-IDF feature representation
+        try:
+            a = len(data.iloc[0]['x'])
+        except TypeError:
+            data = compute_TFIDF(data, 1000)
+        datasets.append(data)
     return datasets
 
 
@@ -61,4 +79,4 @@ def process_file_string(file_string):
         name = regex_output[1]
         file_type = regex_output[2]
         return name, file_type
-    return None, None
+    return file_string, None

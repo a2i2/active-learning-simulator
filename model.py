@@ -12,6 +12,17 @@ from scipy.stats import lognorm
 
 
 class Model(ABC):
+    """
+    Abstract class that provides the base functionality requirements for a machine learning model
+
+    Methods:
+
+    - train: Trains machine learning model
+    - test: Computes the class likelihoods for each test instance in the dataset
+    - predict: Predicts the label for each instance in the testing dataset
+    - score: Evaluates model on testing dataset
+    - reset: Reset model parameters
+    """
     @abstractmethod
     def train(self, train_data):
         """
@@ -156,7 +167,7 @@ class MLP(Model):
         self.model = MLPClassifier(**params)
         return
 
-
+# TODO incremental model training
 class NaiveBayes(Model):
     def __init__(self, **params):
         self.N = 0

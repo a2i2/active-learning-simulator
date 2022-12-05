@@ -4,16 +4,13 @@ import numpy as np
 
 class Selector(ABC):
     """
-    Base selector abstract class for sampling instances for active learning
+    Base selector abstract class that provides base functionality requirements for sampling instances for active learning
 
     Methods:
 
-    initial_select(data, data_indices):
-        Provides the initial sample selection from a dataset
-    select(test_indices, predictions):
-        Selects instances for active learning based on a selection criteria
-    reset():
-        Resets the selector
+    - initial_select: Provides the initial sample selection from a dataset
+    - select: Selects instances for active learning based on a selection criteria
+    - reset: Resets the selector
     """
     @abstractmethod
     def initial_select(self, data, data_indices):

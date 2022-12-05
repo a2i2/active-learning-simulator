@@ -25,7 +25,7 @@ def prep_raw_data(data):
 
 def clean_data(data):
     """
-    Cleans dataset features (text) by removing stopwords, puncutation, repeated characters, and other irrelevant
+    Cleans dataset features (text) by removing stopwords, punctuation, repeated characters, and other irrelevant
     text articles
     :param data: pandas DataFrame to clean
     :return: DataFrame with cleaned feature texts
@@ -59,6 +59,7 @@ def download_nltk_stopwords():
     except LookupError:
         nltk.download('stopwords')
         nltk.download('omw-1.4')
+
 
 def download_nltk_wordnet():
     """
@@ -199,5 +200,5 @@ def TFIDF_vectorise_data(x, max_features):
     """
     vectoriser = TfidfVectorizer(ngram_range=(1, 2), max_features=max_features)
     vectoriser.fit(x)
-    print('Number of features:', len(vectoriser.get_feature_names()))
+    print('Number of features:', len(vectoriser.get_feature_names_out()))
     return vectoriser

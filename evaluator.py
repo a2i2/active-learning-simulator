@@ -155,7 +155,6 @@ def visualise_results(evaluators):
 
     plt.show()
     ax.figure.savefig('recall-work.png', dpi=300)
-    plt.savefig('aaa.png', dpi=300)
 
 
 def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):

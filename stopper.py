@@ -5,13 +5,28 @@ from scipy.stats import hypergeom
 
 
 class Stopper(ABC):
+    """
+    Abstract class that provides base functionality requirements for the stopping criteria object
+
+    Methods:
+
+    - initialise: called during the initial sampling of the active learner
+    - stopping_criteria: determines if a particular criteria for stopping has been met from the newly selected sample, called each iteration of the AL training
+    - reset: resets any parameters and variables
+    """
     @abstractmethod
     def initialise(self, sample):
         pass
 
     @abstractmethod
     def stopping_criteria(self, sample):
-        pass
+        """
+        Returns if the active learning should be terminated, i.e. a stopping criterion has been reached
+        :param sample: newly selected sample to evaluate
+        :return: True if the AL training should be stopped early
+        """
+        stop = False
+        return stop
 
     @abstractmethod
     def reset(self):
