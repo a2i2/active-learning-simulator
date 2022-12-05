@@ -19,6 +19,13 @@ class Stopper(ABC):
 
 
 class SampleSize(Stopper):
+    """
+    Stops active learning when the sample does not produce any more relevant documents. Naive approach.
+
+    Attributes:
+
+    - verbose: when true, outputs progress
+    """
     def __init__(self, verbose=True):
         if verbose:
             self.out = self.verbose_output
@@ -43,6 +50,18 @@ class SampleSize(Stopper):
 
 
 class SampleProportion(Stopper):
+    """
+    Determines an estimate proportion of relevant documents in the dataset. Calculates the number of relevants documents
+    required to be screened; AL stops when (most) relevant documents are thought to be screened.
+
+    Attributes:
+
+    - tau_target: target recall
+    - r_total: total number of relevant documents in the dataset
+    - r_AL: current number of relevant documents screened by the active learner
+    - N: total number of documents in the dataset
+    - verbose: when true, outputs progress
+    """
     def __init__(self, N, tau_target, verbose=True):
         self.tau_target = tau_target
         self.r_total = 0
@@ -82,7 +101,24 @@ class SampleProportion(Stopper):
 
 
 class Statistical(Stopper):
-    def __init__(self, N, tau_target, alpha=0.95, verbose=False):
+    """
+    Uses hypergeometric sampling to estimate a p-value for stopping criteria.
+
+    Attributes:
+
+    - tau_target: target recall
+    - N: total number of documents in the full dataset
+    - N_s: total number of documents left in the dataset
+    - r_AL: current number of relevant documents screened by the active learner
+    - k: number of relevant documents in the sample
+    - alpha: confidence level
+    - Ys: screening results during training
+    - ps: p-values during training
+    - K_hats: estimate K values during training
+    - n_est: estimate number of documents to be screened during training
+    - verbose: when true, outputs progress
+    """
+    def __init__(self, N, tau_target=0.95, alpha=0.95, verbose=False):
         self.tau_target = tau_target
         self.N = N
         self.N_s = self.N
@@ -99,10 +135,19 @@ class Statistical(Stopper):
             self.out = lambda *a: None
 
     def initialise(self, sample):
+        """
+        Initialise the stopper
+        :param sample: sample data to evaluate
+        """
         self.stopping_criteria(sample)
         return
 
     def stopping_criteria(self, sample):
+        """
+        Determines if the active learning should be terminated depending on the calculated p-value.
+        :param sample: sample data to evaluate
+        :return: True if AL should cease
+        """
         stop = False
         for i in range(len(sample)):
             y = sample.iloc[i]['y']
@@ -123,6 +168,10 @@ class Statistical(Stopper):
         return stop
 
     def estimate_progress(self):
+        """
+        WIP
+        Estimate the number of documents that should be screened in order to find all relevant documents.
+        """
         N = self.N_s
         if N == 0:
             self.n_est.append(0)
@@ -140,6 +189,10 @@ class Statistical(Stopper):
         return
 
     def reset(self):
+        """
+        Resets stopper parameters and variables
+        :return:
+        """
         self.N_s = self.N
         self.r_AL = 0
         self.k = 0
@@ -150,5 +203,8 @@ class Statistical(Stopper):
         return
 
     def verbose_output(self):
+        """
+        Provides verbose outputting for stopper when enabled.
+        """
         print('Number of relevants seen:', self.r_AL)
         return

@@ -30,6 +30,7 @@ def main():
         ssl._create_default_https_context = _create_unverified_https_context
 
     params = handle_args()
+    print(params)
 
     # perform TF-IDF feature extraction
     if not load:
@@ -55,6 +56,7 @@ def main():
     for i, dataset in enumerate(datasets):
         if i >= 100:
             break
+        print("Analysing dataset {0} out of {1}...".format(i, len(datasets)))
         data = {'train': datasets[i], 'dev': datasets[i]}
         (evaluator, stopper) = run_model(data, params)
         evaluators.append(evaluator)
@@ -64,7 +66,7 @@ def main():
     print('Mean recall:', sum(recalls) / len(recalls))
     print('Mean work save:', sum(work_saves) / len(work_saves))
 
-    visualise_training(evaluators[0], stoppers[0])
+    visualise_training(evaluators[-1], stoppers[-1])
     visualise_results(evaluators)
 
 
@@ -83,10 +85,10 @@ def handle_args():
                         default='Statistical', nargs='+')
     parser.add_argument("--evaluator",
                         help="True or false, evaluation object for storing statistics and presenting detailed results",
-                        default=True)
+                        default=True, nargs='*')
+    parser.add_argument("--verbose", help="Specify which subsystems should produce verbose outputs",
+                        default='evaluator', nargs='*')
     args = parser.parse_args()
-
-    print(f"Args: {vars(args)}")
 
     confidence = args.confidence
 
@@ -112,11 +114,23 @@ def handle_args():
     else:
         evaluator_ = None
 
-    return {'confidence': confidence,
-            'model': (model_, model_params),
-            'selector': (selector_, selector_params),
-            'stopper': (stopper_, stopper_params),
-            'evaluator': evaluator_}
+    active_learner_module = importlib.import_module('active_learner')
+    active_learner_ = getattr(active_learner_module, 'ActiveLearner')
+
+    verbosity_args = args.verbose
+    model_verbosity = 'model' in verbosity_args
+    selector_verbosity = 'selector' in verbosity_args
+    stopper_verbosity = 'stopper' in verbosity_args
+    evaluator_verbosity = 'evaluator' in verbosity_args
+    active_learner_verbosity = 'active_learner' in verbosity_args
+
+    params = {'confidence': confidence,
+              'model': (model_, model_params, model_verbosity),
+              'selector': (selector_, selector_params, selector_verbosity),
+              'stopper': (stopper_, stopper_params, stopper_verbosity),
+              'evaluator': (evaluator_, evaluator_verbosity),
+              'active_learner': (active_learner_, active_learner_verbosity)}
+    return params
 
 
 def run_model(data, params):
@@ -124,34 +138,20 @@ def run_model(data, params):
     batch_size = int(0.03 * N)
 
     model_AL = params['model'][0](*params['model'][1])
-    selector = params['selector'][0](batch_size, params['confidence'], *params['selector'][1])
-    stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1])
-    #stopper = Statistical(N, 0.95, 0.95, verbose=True)
+    selector = params['selector'][0](batch_size, params['confidence'], *params['selector'][1], verbose=params['selector'][2])
+    stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1], verbose=params['stopper'][2])
+    # stopper = Statistical(N, 0.95, 0.95, verbose=True)
 
     evaluator = None
     if params['evaluator']:
-        evaluator = params['evaluator'](data['train'])
+        evaluator = params['evaluator'][0](data['train'], verbose=params['evaluator'][1])
 
     active_learner = ActiveLearner(model_AL, selector, stopper, batch_size=batch_size, max_iter=1000,
-                                   evaluator=evaluator, verbose=False)
+                                   evaluator=evaluator, verbose=params['active_learner'][1])
 
     (mask, relevant_mask) = active_learner.train(data['train'])
 
-    recall = evaluator.recall[-1]
-    print('Recall:', recall)
-    work_save = evaluator.work_save[-1]
-    print('Work save:', work_save)
-
-    preds = model_AL.predict(data['dev'])
-    y = data['dev']['y']
-    print('Model predicted relevants:', sum(preds))
-
-    print('Relevants found:', sum(relevant_mask))
-    print('Actual number of relevants:', sum(y))
-    print('Total reviews screened:', sum(mask))
-    print('Total reviews:', N)
-
-    print('\n')
+    evaluator.out(model_AL, data['dev'])
     return evaluator, stopper
 
 
