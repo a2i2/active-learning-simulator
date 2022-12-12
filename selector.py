@@ -91,8 +91,7 @@ class HighestConfidence(Selector):
         return
 
     def verbose_output(self, sample):
-        print('Screening ' + str(sample.size) + " instances")
-
+        print("\r" + 'Screening ' + str(sample.size) + " instances", end='')
 
 class LowestEntropy(Selector):
     def __init__(self, batch_size, p_threshold, verbose=False):

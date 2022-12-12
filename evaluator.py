@@ -59,7 +59,7 @@ class Evaluator:
         return
 
     def output_results(self, model, test_data):
-        print('Recall:', self.recall[-1])
+        print('\nRecall:', self.recall[-1])
         print('Work save:', self.work_save[-1])
         print('Relevants found:', self.r_AL[-1])
 
@@ -72,49 +72,28 @@ class Evaluator:
         print('Model predicted relevants:', sum(preds))
         print('\n')
 
+    def get_eval_metrics(self):
+        return [{'name': 'recall', 'x': ('documents seen', self.N_AL), 'y': ('recall', self.recall)},
+                {'name': 'model recall', 'x': ('documents seen', self.N_AL[len(self.N_AL) - len(self.tau_model):]), 'y': ('model recall', self.tau_model)}]
 
-def visualise_training(evaluator, stopper):
+
+# TODO selector, stopper should have their own output: append to a results list
+def visualise_training(results):
     """
     Visualises the performance of the system on a dataset
-    :param evaluator: evaluator object trained on the dataset
-    :param stopper: stopper object corresponding to the training
+    :param results: {name : name, x : (name, vals), y : (name, vals)}
     """
-    fig1, ax1 = plt.subplots()
-    fig2, ax2 = plt.subplots()
-    fig3, ax3 = plt.subplots()
-
-    colour = 'tab:red'
-    ax1.set_xlabel('Documents seen')
-    ax1.set_ylabel('Recall')
-    ax1.plot(evaluator.N_AL, evaluator.recall, label='Recall')
-    ax1.tick_params(axis='y')
-    fig1.tight_layout()
-    ax1.set_title('Recall during training')
-    legend = ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
-    colour2 = 'tab:blue'
-    ax2.set_xlabel('Iterations')
-    ax2.set_ylabel('p-value')
-    ax2.plot(range(len(stopper.ps)), stopper.ps, label='p-values')
-    ax2.tick_params(axis='y')
-    fig2.tight_layout()
-    ax2.set_title('p-values during training')
-    legend = ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
-    colour3 = 'tab:green'
-    ax3.set_xlabel('Documents seen')
-    ax3.set_ylabel('Recall')
-    ax3.plot(evaluator.N_AL[len(evaluator.N_AL) - len(evaluator.tau_model):], evaluator.tau_model, label='Model recall')
-    ax3.tick_params(axis='y')
-    fig3.tight_layout()
-    ax3.set_title('Model recall during training')
-    legend = ax3.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
-    plt.show()
-
-    ax1.figure.savefig('recall.png', dpi=300)
-    ax2.figure.savefig('p-value.png', dpi=300)
-    ax3.figure.savefig('model-recall.png', dpi=300)
+    for i, result in enumerate(results):
+        fig1, ax1 = plt.subplots()
+        ax1.set_xlabel(result['x'][0])
+        ax1.set_ylabel(result['y'][0])
+        ax1.plot(result['x'][1], result['y'][1], label=result['y'][0])
+        ax1.tick_params(axis='y')
+        fig1.tight_layout()
+        ax1.set_title(result['name'])
+        legend = ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.show()
+        ax1.figure.savefig('output_{0}.png'.format(i), dpi=300)
 
 
 def visualise_results(evaluators):
@@ -142,7 +121,7 @@ def visualise_results(evaluators):
 
     ax = fig.add_gridspec(top=0.75, right=0.75).subplots()
     ax.set(aspect=1)
-    ax.set_title('Recall - work save')
+    #ax.set_title('Recall - work save')
     ax.set_xlabel('Work save')
     ax.set_ylabel('Recall')
     ax_histx = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
@@ -166,11 +145,21 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     p = ax.scatter(x, y, c=colours, alpha=0.5)
 
     # now determine nice limits by hand:
-    binwidth = 0.025
+    binwidth = 0.01
     xymax = max(np.max(np.abs(x)), np.max(np.abs(y)))
     lim = (int(xymax / binwidth) + 1) * binwidth
 
     bins = np.arange(0, lim + binwidth, binwidth)
     ax_histx.hist(x, bins=bins)
+
+    plt.axvline(x.mean(), color='k', linestyle='dashed', linewidth=1)
+    min_ylim, max_ylim = plt.ylim()
+    plt.text(x.mean() * 1.1, max_ylim * 0.1, 'Mean: {:.2f}'.format(x.mean()))
+
     ax_histy.hist(y, bins=bins, orientation='horizontal')
+
+    plt.axhline(y.mean(), color='k', linestyle='dashed', linewidth=1)
+    min_xlim, max_xlim = plt.xlim()
+    plt.text(max_xlim * 0.7, y.mean() * 0.95, 'Mean: {:.2f}'.format(y.mean()))
+
     return p

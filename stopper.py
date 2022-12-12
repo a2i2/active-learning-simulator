@@ -1,5 +1,8 @@
 import math
+import sys
 from abc import ABC, abstractmethod
+import time
+
 import numpy as np
 from scipy.stats import hypergeom
 
@@ -32,6 +35,10 @@ class Stopper(ABC):
     def reset(self):
         pass
 
+    @abstractmethod
+    def get_eval_metrics(self):
+        pass
+
 
 class SampleSize(Stopper):
     """
@@ -58,6 +65,9 @@ class SampleSize(Stopper):
     def reset(self):
         return
 
+    def get_eval_metrics(self):
+        return None
+
     def verbose_output(self, stop):
         if stop:
             print('Stopping criteria reached: screening sample size is 0')
@@ -81,6 +91,7 @@ class SampleProportion(Stopper):
         self.tau_target = tau_target
         self.r_total = 0
         self.r_AL = 0
+        self.k = 0
         self.N = N
         if verbose:
             self.out = self.verbose_output
@@ -97,8 +108,8 @@ class SampleProportion(Stopper):
         return
 
     def stopping_criteria(self, sample):
-        k = sum(sample['y'])
-        self.r_AL = self.r_AL + k
+        self.k = sum(sample['y'])
+        self.r_AL = self.r_AL + self.k
         stop = (self.r_AL >= self.tau_target * self.r_total)
         self.out()
         return stop
@@ -106,12 +117,16 @@ class SampleProportion(Stopper):
     def reset(self):
         return
 
+    def get_eval_metrics(self):
+        return None
+
     def verbose_output(self):
-        recall = 0
-        if self.r_total != 0:
-            recall = self.r_AL / self.r_total
-        print('Recall:', recall, 'for', self.r_total, 'estimated total relevants')
-        print('Number of relevants seen:', self.r_AL)
+        # recall = 0
+        # if self.r_total != 0:
+        #    recall = self.r_AL / self.r_total
+        # print('Recall:', recall, 'for', self.r_total, 'estimated total relevants')
+        print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
+        #time.sleep(1)
         return
 
 
@@ -164,8 +179,10 @@ class Statistical(Stopper):
         :return: True if AL should cease
         """
         stop = False
+        self.k = 0
         for i in range(len(sample)):
             y = sample.iloc[i]['y']
+            self.k += y
             self.r_AL = self.r_AL + y
             self.N_s -= 1
 
@@ -217,9 +234,14 @@ class Statistical(Stopper):
         self.n_est = []
         return
 
+    def get_eval_metrics(self):
+        return [{'name': 'p-values', 'x': ('iterations', range(len(self.ps))), 'y': ('p-values', self.ps)}]
+
     def verbose_output(self):
         """
         Provides verbose outputting for stopper when enabled.
         """
-        print('Number of relevants seen:', self.r_AL)
+        print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
+        time.sleep(2)
         return
+

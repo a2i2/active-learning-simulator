@@ -119,7 +119,6 @@ class ActiveLearner:
             test_indices = self.data_indices[self.indice_mask == 0]
             train_indices = self.data_indices[self.indice_mask == 1]
             if len(test_indices) == 0:
-                print('early stop')
                 break
 
             # add screened instances to training data
