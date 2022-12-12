@@ -27,6 +27,7 @@ class Model(ABC):
     def train(self, train_data):
         """
         Trains machine learning model
+
         :param train_data: training dataset containing features 'x' and ground truth labels 'y'
         """
         pass
@@ -35,6 +36,7 @@ class Model(ABC):
     def test(self, test_data):
         """
         Computes the class likelihoods for each test instance in the dataset
+
         :param test_data: testing dataset containing features 'x'
         :return: list of probability predictions for each class for each test instance
         """
@@ -44,6 +46,7 @@ class Model(ABC):
     def predict(self, test_data):
         """
         Predicts the label for each instance in the testing dataset
+
         :param test_data: testing dataset containing features 'x'
         :return: label predictions for each instance
         """
@@ -53,6 +56,7 @@ class Model(ABC):
     def score(self, test_data):
         """
         Evaluates model on testing dataset
+
         :param test_data: testing dataset containing features 'x' and ground truth labels 'y'
         :return: evaluation metrics
         """
@@ -62,6 +66,7 @@ class Model(ABC):
     def reset(self, **params):
         """
         Reset model parameters
+
         :param params: arguments for recreation of the model
         """
         pass

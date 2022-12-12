@@ -25,6 +25,7 @@ class Stopper(ABC):
     def stopping_criteria(self, sample):
         """
         Returns if the active learning should be terminated, i.e. a stopping criterion has been reached
+
         :param sample: newly selected sample to evaluate
         :return: True if the AL training should be stopped early
         """
@@ -175,6 +176,7 @@ class Statistical(Stopper):
     def stopping_criteria(self, sample):
         """
         Determines if the active learning should be terminated depending on the calculated p-value.
+
         :param sample: sample data to evaluate
         :return: True if AL should cease
         """
@@ -223,6 +225,7 @@ class Statistical(Stopper):
     def reset(self):
         """
         Resets stopper parameters and variables
+
         :return:
         """
         self.N_s = self.N
@@ -242,6 +245,5 @@ class Statistical(Stopper):
         Provides verbose outputting for stopper when enabled.
         """
         print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
-        time.sleep(2)
         return
 

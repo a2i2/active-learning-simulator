@@ -1,10 +1,12 @@
 # Simulator for Active Learning
+Intended to assist the Living Knowledge project, this simulator performs systematic review labelling using an Active Learning approach. Various algorithms and methods can be implemented and their efficacy evaluated with respect to different datasets.
+
+
 
 ## Using the simulator
-
-### Running the program
 Ensure compressed data file is present in the working directory and in the correct [format](#compatible-datasets)
 
+### Running the program with command line arguments
 Optional (named) arguments: specify algorithms and learning parameters
 - *data*
   - name of the directory or file containing the datasets (either csv or pkl)
@@ -24,7 +26,7 @@ Optional (named) arguments: specify algorithms and learning parameters
   - Lowest entropy selector ([*LowestEntropy*](./selector.py))
   - Weighted highest confidence selector ([*WeightedSample*](./selector.py))
 - *evaluator*
-  - [*True*](./selector.py): enable evalautor object to record training
+  - [*True*](./selector.py): enable evaluator object to record training
   - [*False*](./selector.py): disable evaluator object (faster operation)
 - *verbose*: list the subsystems to produce a verbose output, out of:
   - model
@@ -35,6 +37,34 @@ Optional (named) arguments: specify algorithms and learning parameters
 
 Example command line instruction:
 - <code>./main.py -data datasets --confidence 0.95 --model NB --selector HighestConfidence --stopper Statistical --evaluator True --verbose stopper evaluator</code>
+
+### Running the program with config file
+Keys: 
+- DATA
+  - data: specify the name of the datasets
+- ALGORITHMS: 
+  - model: name of machine learning model, and parameters
+  - selector: name of sample selection algorithm, and parameters
+  - stopper: name of stopping criteria algorithm, and parameters
+- TRAINING:
+  - confidence: level of recall confidence required
+  - verbose: the subsystems to produce a verbose output
+  - evaluator: True of False, store evaluation metrics and visualise detailed results
+
+Example configuration:
+
+`[DATA]`\
+`data = datasets`
+
+`[ALGORITHMS]`\
+`model = NB`\
+`selector = HighestConfidence`\
+`stopper = Statistical`
+
+`[TRAINING]`\
+`confidence = 0.95`\
+`verbose = evaluator stopper selector`\
+`evaluator = True`
 
 
 ### Implementing algorithms
@@ -63,7 +93,7 @@ Currently support format:
 - removal of English stopwords
 - removal of punctuation
 - removal of repeated characters (maybe not necessary for academic literature?)
-- removal of miscellaneous artifactssuch as URLs, numerics, email addresses etc.
+- removal of miscellaneous artifacts such as URLs, numerics, email addresses etc.
 
 Tokenisation, stemming and lemmatisation
 - reduces word variations by only considering root lexemes
@@ -81,17 +111,17 @@ Each model should include the following methods:
 - train: train model from training data
 - test: test model on testing data and output scores (e.g. probabilities) for both classes *irrelevant* and *relevant*
 - predict: outputs the class predictions for testing data, i.e. *irrelevant* (class 0) or *relevant* (class 1)
-- score: method for outputting evaluation metrics, not strictly requried
+- score: method for outputting evaluation metrics, not strictly required
 - reset: reset model parameters
 
 
 
 
 ### Active learning sample selection
-Selector object handles the selection of sample istances during Active Learning.
+Selector object handles the selection of sample instances during Active Learning.
 
 Each selector should include the following methods:
-- initial_select: provides implementation for the initial sampling to initialise the machine learning model. Typically this is done through random sampling
+- initial_select: provides implementation for the initial sampling to initialise the machine learning model. Typically, this is done through random sampling
 - select: selects samples from the machine learning predictions during AL testing
 - reset: resets any selector parameters
 
@@ -106,7 +136,7 @@ Stopper object handles the early stopping of Active Learning.
 
 Each stopper should include the following methods:
 - initialise: this is run during the initial sampling before ML training. As such, it may be called several times if (random) sampling did not produce desirable class distributions
-- stopping_criteria: returns whether the Active Learning should be continued and stopped early. This is called each iteration of the main AL training loop, i.e. after selection of a sample batch and ML training / tesing
+- stopping_criteria: returns whether the Active Learning should be continued and stopped early. This is called each iteration of the main AL training loop, i.e. after selection of a sample batch and ML training / testing
 - reset: resets any stopper parameters
 
 Currently supported stopping criteria algorithms include:
@@ -118,9 +148,6 @@ Currently supported stopping criteria algorithms include:
 ### Active learning handler
 Handles the AL training loops for systematic review labelling. Training involves initialisation of parameters, initial sampling using the chosen selector's *initial_select* method, main AL training loop using the chosen ML model's predictions and chosen selector's *select* method under the chosen stopper's *stopping_criteria*.
 
-Produces a mask representing the items (indices) in the dataset that were trained, and a mask represeting the instances that were found to be relevant.
+Produces a mask representing the items (indices) in the dataset that were trained, and a mask representing the instances that were found to be relevant.
 
 ### Evaluator
-
-
-## CLI interface

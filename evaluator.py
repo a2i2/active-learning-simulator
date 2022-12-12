@@ -31,6 +31,7 @@ class Evaluator:
     def update(self, model, sample, test_data):
         """
         Update evaluator statistics
+
         :param model: machine learning model used in active learning
         :param sample: new sample instances
         :param test_data: remaining testing data
@@ -81,6 +82,7 @@ class Evaluator:
 def visualise_training(results):
     """
     Visualises the performance of the system on a dataset
+
     :param results: {name : name, x : (name, vals), y : (name, vals)}
     """
     for i, result in enumerate(results):
@@ -99,6 +101,7 @@ def visualise_training(results):
 def visualise_results(evaluators):
     """
     Visualise the results across several datasets
+
     :param evaluators: list of evaluators, one for each dataset training
     """
     recalls = np.zeros(shape=(len(evaluators), 1))

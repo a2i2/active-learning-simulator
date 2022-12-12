@@ -9,6 +9,7 @@ from data_extraction import process_file_string
 def parse_CLI():
     """
     Parses command line arguments into program parameters and algorithms
+
     :return: parameters for the program, model selector stopper evaluator etc.
     """
     parser = argparse.ArgumentParser()
@@ -53,6 +54,7 @@ def parse_CLI():
 def process_config_arguments(argument):
     """
     Split argument string in list
+
     :param argument:
     :return: list of separate arguments
     """
@@ -62,7 +64,7 @@ def process_config_arguments(argument):
 
 def get_params(data_args, algorithm_args, training_args):
     """
-    
+
     :param data_args:
     :param algorithm_args:
     :param training_args:

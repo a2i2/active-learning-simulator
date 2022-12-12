@@ -61,6 +61,13 @@ def main():
 
 
 def run_model(data, params):
+    """
+    Creates algorithm objects and runs the active learning program
+
+    :param data: dataset for systematic review labelling
+    :param params: input parameters for algorithms and other options for training
+    :return: returns the evaluator and stopper objects trained on the dataset
+    """
     N = len(data['train'])
     batch_size = int(0.03 * N)
     # TODO different batch sizes? as a parameter

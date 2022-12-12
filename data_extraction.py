@@ -8,6 +8,7 @@ from tfidf import compute_TFIDF
 def get_datasets(data_name, data_file_type, working_directory):
     """
     Get data from different formats and file types. Loads from .zip, directory with csv datas, directory with pkl datas
+
     :param data_name: name of the data directory or file
     :param data_file_type: string name of the data file type (None if directory)
     :param working_directory: working directory of the program
@@ -45,6 +46,7 @@ def get_datasets(data_name, data_file_type, working_directory):
 def extract_datasets(datasets_name, dest_path):
     """
     Extract zipped datasets
+
     :param datasets_name: file name of the datasets
     :param dest_path: destination file path to extract to
     """
@@ -57,6 +59,7 @@ def extract_datasets(datasets_name, dest_path):
 def load_csv_data(data_path, index_name, feature_names, label_name):
     """
     Loads dataset from csv file
+
     :param data_path: file path of the dataset
     :param index_name: header name of the column to index with
     :param feature_names: list of header names of the columns to use as the features
@@ -70,6 +73,7 @@ def load_csv_data(data_path, index_name, feature_names, label_name):
 def process_file_string(file_string):
     """
     Processes file name, splits into name and file type
+
     :param file_string: name of the file
     :return: extracted name and file type
     """

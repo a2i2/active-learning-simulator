@@ -16,6 +16,7 @@ class Selector(ABC):
     def initial_select(self, data, data_indices):
         """
         Provides the initial sample selection from a dataset
+
         :param data: raw dataset
         :param data_indices: corresponding indices for the dataset
         :return: indices of the sample instances
@@ -26,6 +27,7 @@ class Selector(ABC):
     def select(self, test_indices, predictions):
         """
         Using ML model predictions to sample from the available instances
+
         :param test_indices: indices of the available instances
         :param predictions: corresponding ML predictions for each label for each test instance
         :return: indices of the sample instances
@@ -61,6 +63,7 @@ class HighestConfidence(Selector):
     def initial_select(self, data, data_indices):
         """
         Randomly samples from data set
+
         :param data: raw dataset
         :param data_indices: corresponding indices for the dataset
         :return: indices of the sample instances
@@ -72,6 +75,7 @@ class HighestConfidence(Selector):
     def select(self, test_indices, predictions):
         """
         Selects sample based on ML model confidence in prediction (class probability)
+
         :param test_indices: indices of the available instances
         :param predictions: corresponding ML predictions for each label for each test instance
         :return: indices of the sample instances
@@ -110,6 +114,7 @@ class LowestEntropy(Selector):
     def select(self, test_indices, predictions):
         """
         Selects sample based on ML model entropy in prediction, chooses relevant*? instances with the lowest entropy
+
         :param test_indices: indices of the available instances
         :param predictions: corresponding ML predictions for each label for each test instance
         :return: indices of the sample instances
@@ -125,6 +130,7 @@ class LowestEntropy(Selector):
     def calc_entropy(self, predictions):
         """
         Calculates the entropy of prediction between each class for each instance
+
         :param predictions: list of class probability predictions
         :return: list of entropies for each instance
         """

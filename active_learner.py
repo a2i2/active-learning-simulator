@@ -55,6 +55,7 @@ class ActiveLearner:
     def train(self, data):
         """
         Training handler for the active learner
+
         :param data: training dataset DataFrame
         :return:
         """
@@ -68,6 +69,7 @@ class ActiveLearner:
     def initialise(self, data):
         """
         Initialise active learner parameters
+
         :param data: full dataset DataFrame
         """
         self.data = data
