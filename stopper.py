@@ -67,7 +67,7 @@ class SampleSize(Stopper):
         return
 
     def get_eval_metrics(self):
-        return None
+        return []
 
     def verbose_output(self, stop):
         if stop:
@@ -119,7 +119,7 @@ class SampleProportion(Stopper):
         return
 
     def get_eval_metrics(self):
-        return None
+        return []
 
     def verbose_output(self):
         # recall = 0
@@ -182,6 +182,7 @@ class Statistical(Stopper):
         """
         stop = False
         self.k = 0
+        # calculate p-value for every addition of sample instances
         for i in range(len(sample)):
             y = sample.iloc[i]['y']
             self.k += y

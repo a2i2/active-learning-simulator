@@ -60,24 +60,26 @@ class Evaluator:
         return
 
     def output_results(self, model, test_data):
-        print('\nRecall:', self.recall[-1])
-        print('Work save:', self.work_save[-1])
-        print('Relevants found:', self.r_AL[-1])
-
-        y = test_data['y']
-        print('Actual number of relevants:', sum(y))
-        print('Total reviews screened:', self.N_AL[-1])
-        print('Total reviews:', self.N)
-
         preds = model.predict(test_data)
-        print('Model predicted relevants:', sum(preds))
-        print('\n')
+        output_string = ''
+        output_string += '\nRecall: {0}'.format(self.recall[-1])
+        output_string += '\nWork save: {0}'.format(self.work_save[-1])
+        output_string += '\nRelevants found: {0}'.format(self.r_AL[-1])
+        output_string += '\nActual number of relevants: {0}'.format(sum(test_data['y']))
+        output_string += '\nTotal reviews screened: {0}'.format(self.N_AL[-1])
+        output_string += '\nTotal reviews: {0}'.format(self.N)
+        output_string += '\nModel predicted relevants: {0}'.format(sum(preds))
+        output_string += '\n'
+
+        print(output_string)
+        return output_string
 
     def get_eval_metrics(self):
         return [{'name': 'recall', 'x': ('documents seen', self.N_AL), 'y': ('recall', self.recall)},
                 {'name': 'model recall', 'x': ('documents seen', self.N_AL[len(self.N_AL) - len(self.tau_model):]), 'y': ('model recall', self.tau_model)}]
 
 
+# TODO output argument, generate prefix from config
 # TODO selector, stopper should have their own output: append to a results list
 def visualise_training(results):
     """
@@ -85,6 +87,7 @@ def visualise_training(results):
 
     :param results: {name : name, x : (name, vals), y : (name, vals)}
     """
+    axs = []
     for i, result in enumerate(results):
         fig1, ax1 = plt.subplots()
         ax1.set_xlabel(result['x'][0])
@@ -95,7 +98,9 @@ def visualise_training(results):
         ax1.set_title(result['name'])
         legend = ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.show()
-        ax1.figure.savefig('output_{0}.png'.format(i), dpi=300)
+        axs.append(ax1)
+        #ax1.figure.savefig('output_{0}.png'.format(i), dpi=300)
+    return axs
 
 
 def visualise_results(evaluators):
@@ -117,26 +122,30 @@ def visualise_results(evaluators):
         N_min = min(evaluator.N, N_min)
         N_max = min(evaluator.N, N_max)
 
-    # normalise colours
+    # normalise colours between 0-255
     colours = (colours - N_min) / N_max * 255.0
 
+    # format figure
     fig = plt.figure(constrained_layout=True)
-
     ax = fig.add_gridspec(top=0.75, right=0.75).subplots()
     ax.set(aspect=1)
-    #ax.set_title('Recall - work save')
     ax.set_xlabel('Work save')
     ax.set_ylabel('Recall')
+
+    # create distribution axes
     ax_histx = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
     ax_histy = ax.inset_axes([1.05, 0, 0.25, 1], sharey=ax)
 
-    # p = ax.scatter(work_saves, recalls, c=colours, alpha=0.5)
+    # create distribution plots
     p = scatter_hist(work_saves, recalls, ax, colours, ax_histx, ax_histy)
 
+    # create colour bar
     fig.colorbar(p, ax=ax)
 
+    # show and save plot to file
     plt.show()
-    ax.figure.savefig('recall-work.png', dpi=300)
+    #ax.figure.savefig('recall-work.png', dpi=300)
+    return ax
 
 
 def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
@@ -144,23 +153,28 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     ax_histx.tick_params(axis="x", labelbottom=False)
     ax_histy.tick_params(axis="y", labelleft=False)
 
-    # the scatter plot:
+    # plot main scatter data
     p = ax.scatter(x, y, c=colours, alpha=0.5)
 
-    # now determine nice limits by hand:
+    # determine limits for distribution axes
     binwidth = 0.01
     xymax = max(np.max(np.abs(x)), np.max(np.abs(y)))
     lim = (int(xymax / binwidth) + 1) * binwidth
 
     bins = np.arange(0, lim + binwidth, binwidth)
+
+    # create distribution for x values, in y direction
     ax_histx.hist(x, bins=bins)
 
+    # plot the mean of the x values on the main scatter plot
     plt.axvline(x.mean(), color='k', linestyle='dashed', linewidth=1)
     min_ylim, max_ylim = plt.ylim()
     plt.text(x.mean() * 1.1, max_ylim * 0.1, 'Mean: {:.2f}'.format(x.mean()))
 
+    # create distribution for the y values, in x direction
     ax_histy.hist(y, bins=bins, orientation='horizontal')
 
+    # plot the mean of the y values on the main scatter plot
     plt.axhline(y.mean(), color='k', linestyle='dashed', linewidth=1)
     min_xlim, max_xlim = plt.xlim()
     plt.text(max_xlim * 0.7, y.mean() * 0.95, 'Mean: {:.2f}'.format(y.mean()))

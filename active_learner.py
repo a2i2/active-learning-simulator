@@ -4,6 +4,11 @@ from tqdm import tqdm
 
 class ActiveLearner:
     def __init__(self, model, selector, stopper, batch_size=10, max_iter=100, evaluator=None, verbose=True):
+        self.relevant_mask = None
+        self.indice_mask = None
+        self.N = None
+        self.data = None
+        self.data_indices = None
         self.model = model
         self.selector = selector
         self.stopper = stopper
@@ -11,18 +16,18 @@ class ActiveLearner:
         self.max_iter = max_iter
         self.batch_size = batch_size
 
-        # handling progress output
+        # handling progress and evaluator output
         if verbose:
             self.pbar = tqdm(total=self.max_iter, position=0, leave=True)
 
-            def progress(self):
-                self.pbar.update()
-                print('Recall:', self.evaluator.recall[-1])
+            def progress(active_learner):
+                active_learner.pbar.update()
+                print('Recall:', active_learner.evaluator.recall[-1])
 
             self.progress = progress
 
-            def end_progress(self):
-                self.pbar.close()
+            def end_progress(active_learner):
+                active_learner.pbar.close()
 
             self.end_progress = end_progress
         else:
@@ -101,10 +106,12 @@ class ActiveLearner:
             train_indices = self.data_indices[self.indice_mask == 1]
             # new test dataset excludes screened instances
             test_data = self.data.iloc[test_indices]
+
             # initialise, update stopper
             self.stopper.initialise(sample)
             # update evaluator
             self.initialise_evaluator(sample, self.data)
+
             # check if sample has two classes
             sample_sum = sum(sample['y'])
             if sample_sum != len(sample['y']) and sample_sum != 0:
@@ -149,10 +156,51 @@ class ActiveLearner:
             if self.stopper.stopping_criteria(sample):
                 break
 
-            # final model
+        # final model
         train_data = self.data.iloc[train_indices]
         self.model.train(train_data)
 
+        self.end_progress(self)
+        return
+
+    # TODO random learning
+    # random learning loop
+    def random_learn(self):
+        """
+        Handles the active learning loop: sample selection, model training, stopping
+        """
+        train_indices = []
+        for i in range(self.max_iter):
+            # get indices for training and testing instances
+            test_indices = self.data_indices[self.indice_mask == 0]
+            train_indices = self.data_indices[self.indice_mask == 1]
+            if len(test_indices) == 0:
+                break
+
+            # add screened instances to training data
+            train_data = self.data.iloc[train_indices]
+            # new test dataset excludes screened instances
+            test_data = self.data.iloc[test_indices]
+
+            # screen test instances
+            sample_indices = self.selector.initial_select(test_data, test_indices)
+            sample = self.data.iloc[sample_indices]
+
+            # add screened instances to training set
+            self.indice_mask[sample_indices] = 1
+            self.relevant_mask[sample_indices] = sample['y']
+
+            # update eval
+            self.update_evaluator(self.model, sample, self.data)
+            # print progress
+            self.progress(self)
+
+            # stopping criteria
+            if self.stopper.stopping_criteria(sample):
+                break
+
+        # final
+        train_data = self.data.iloc[train_indices]
         self.end_progress(self)
         return
 

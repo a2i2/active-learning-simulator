@@ -51,7 +51,7 @@ Keys:
   - verbose: the subsystems to produce a verbose output
   - evaluator: True of False, store evaluation metrics and visualise detailed results
 
-Example configuration:
+For the names of currently implemented algorithms, see above command line arguments. Example configuration:
 
 `[DATA]`\
 `data = datasets`
