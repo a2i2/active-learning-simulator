@@ -47,7 +47,9 @@ Supported config file formats:
     - stopper
     - active_learner
 
-For the names of currently implemented algorithms, see above command line arguments. Example configuration:
+For the names of currently implemented algorithms, see above command line arguments. Example configurations:
+
+*config_file.ini*
 
 `[DATA]`\
 `data = datasets`
@@ -61,6 +63,21 @@ For the names of currently implemented algorithms, see above command line argume
 `confidence = 0.95`\
 `verbose = evaluator stopper selector`
 
+*config_file.yml*
+
+`DATA:`\
+  ` - data: datasets`
+
+`ALGORITHMS:`
+  `- model: LR`\
+  `- selector: HighestConfidence`\
+  `- stopper: SampleProportion`
+
+`TRAINING:`\
+  `- confidence: 0.95`\
+  `- verbose:`
+  
+  
 
 ### Implementing algorithms
 To add algorithms for the model, selector, or stopper, refer to class specification sections [below](#al-model-framework). 
