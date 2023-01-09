@@ -7,38 +7,14 @@ Intended to assist the Living Knowledge project, this simulator performs systema
 Ensure compressed data file is present in the working directory and in the correct [format](#compatible-datasets)
 
 ### Running the program with command line arguments
-Optional (named) arguments: specify algorithms and learning parameters
-- *data*
-  - name of the directory or file containing the datasets (either csv or pkl)
-- *confidence*
-  - value between 0 - 1, typically specifies the target recall
-- *model*
-  - Gaussian Naive Bayes ([NB](./model.py))
-  - Logistic Regression ([LR](./model.py))
-  - Linear Support Vector Classification ([SVC](./model.py))
-  - Multilayer perceptron ([MLP](./model.py))
-- *selector*
-  - Highest confidence selector ([*HighestConfidence*](./selector.py))
-  - Lowest entropy selector ([*LowestEntropy*](./selector.py))
-  - Weighted highest confidence selector ([*WeightedSample*](./selector.py))
-- *stopper*
-  - Highest confidence selector ([*HighestConfidence*](./selector.py))
-  - Lowest entropy selector ([*LowestEntropy*](./selector.py))
-  - Weighted highest confidence selector ([*WeightedSample*](./selector.py))
-- *evaluator*
-  - [*True*](./selector.py): enable evaluator object to record training
-  - [*False*](./selector.py): disable evaluator object (faster operation)
-- *verbose*: list the subsystems to produce a verbose output, out of:
-  - model
-  - selector
-  - stopper
-  - evaluator
-  - active_learner
+Specify the directory containing all configs files to be used.
 
 Example command line instruction:
-- <code>./main.py -data datasets --confidence 0.95 --model NB --selector HighestConfidence --stopper Statistical --evaluator True --verbose stopper evaluator</code>
+```commandline
+>> ./main.py configs_directory
+```
 
-### Running the program with config file
+### Config file format
 Keys: 
 - DATA
   - data: specify the name of the datasets
@@ -53,18 +29,43 @@ Keys:
 
 For the names of currently implemented algorithms, see above command line arguments. Example configuration:
 
-`[DATA]`\
-`data = datasets`
 
-`[ALGORITHMS]`\
-`model = NB`\
-`selector = HighestConfidence`\
-`stopper = Statistical`
+```yaml
+# .yaml
+DATA:
+  - data: datasets_directory
 
-`[TRAINING]`\
-`confidence = 0.95`\
-`verbose = evaluator stopper selector`\
-`evaluator = True`
+ALGORITHMS:
+  - model: LR
+  - selector: HighestConfidence
+  - stopper: SampleProportion
+
+TRAINING:
+  - confidence: 0.95
+  - verbose: 
+```
+.ini:
+```ini
+; .ini
+[DATA]
+data = datasets_directory
+
+[ALGORITHMS]
+model = NB
+selector = HighestConfidence
+stopper = Statistical
+
+[TRAINING]
+confidence = 0.95
+verbose = stopper selector
+```
+
+### Dependecies
+- [Python v3.8.8](https://a2i2.atlassian.net/wiki/spaces/ENG/pages/199196673/Tech+Stack+Installation+Recommendations#Missing)
+- [pip3](https://a2i2.atlassian.net/wiki/spaces/ENG/pages/199196673/Tech+Stack+Installation+Recommendations#Missing)
+- sciPy
+- numPy
+- 
 
 
 ### Implementing algorithms
