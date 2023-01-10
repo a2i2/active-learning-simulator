@@ -11,8 +11,7 @@ from stopper import *
 from datetime import datetime
 
 working_directory = './'
-
-load = True
+num_datasets = -1 # set to -1 for all datasets
 
 
 def main():
@@ -36,9 +35,17 @@ def main():
     pp.pprint(params)
     print()
 
+    mean_recalls = []
+    min_recalls = []
+    mean_work_saves = []
+    min_work_saves = []
+
+    # for each configuration
     for param in params:
+        pp.pprint(param)
+        print()
         # get datasets to train the program on
-        full_datasets = get_datasets(param['data'][0], param['data'][1], working_directory)
+        full_datasets = get_datasets(param['data'][0], param['data'][1], working_directory, num_datasets)
         # truncate datasets for speed
         data_start = 0
         data_end = len(full_datasets)
@@ -68,8 +75,23 @@ def main():
 
         output_string += 'Mean recall: {0}'.format(sum(recalls) / len(recalls))
         output_string += '\nMean work save: {0}'.format(sum(work_saves) / len(work_saves))
-        print('Mean recall:', sum(recalls) / len(recalls))
-        print('Mean work save:', sum(work_saves) / len(work_saves))
+
+        mean_recall = sum(recalls) / len(recalls)
+        mean_recalls.append(mean_recall)
+
+        min_recall = min(recalls)
+        min_recalls.append(min_recall)
+
+        mean_work_save = sum(work_saves) / len(work_saves)
+        mean_work_saves.append(mean_work_save)
+
+        min_work_save = min(work_saves)
+        min_work_saves.append(min_work_save)
+
+        print('Mean recall:', mean_recall)
+        print('Minimum recall:', min_recall)
+        print('Mean work save:', mean_work_save)
+        print('Minimum work save:', min_work_save)
         print()
 
         output_file_name = output_directory + '/' + param['name']
@@ -86,11 +108,22 @@ def main():
         ax = visualise_results(evaluators)
         ax.figure.savefig(output_file_name + '_' + 'recall-work.png', dpi=300)
 
+    # config metrics
+    ax = visualise_configs(mean_work_saves, mean_recalls)
+    ax.figure.savefig(output_directory + '/configs_' + 'mean-recall-work.png', dpi=300)
+    ax = visualise_configs(min_work_saves, min_recalls)
+    ax.figure.savefig(output_directory + '/configs_' + 'min-recall-work.png', dpi=300)
+
+    print('Configs mean recall:', sum(mean_recalls) / len(mean_recalls))
+    print('Configs minimum recall:', min(min_recalls))
+    print('Configs mean work save:', sum(mean_work_saves) / len(mean_work_saves))
+    print('Configs minimum work save:', min(min_work_saves))
+    print()
+
 
 def run_model(data, params):
     """
     Creates algorithm objects and runs the active learning program
-
     :param data: dataset for systematic review labelling
     :param params: input parameters for algorithms and other options for training
     :return: returns the evaluator and stopper objects trained on the dataset
@@ -110,7 +143,6 @@ def run_model(data, params):
     if params['evaluator']:
         evaluator = params['evaluator'][0](data['train'], verbose=params['evaluator'][1])
 
-    # TODO output just the active learner
     # create active learner
     active_learner = ActiveLearner(model_AL, selector, stopper, batch_size=batch_size, max_iter=1000,
                                    evaluator=evaluator, verbose=params['active_learner'][1])

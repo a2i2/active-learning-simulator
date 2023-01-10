@@ -4,7 +4,7 @@ DATA:
 ALGORITHMS:
   - model: LR
   - selector: HighestConfidence
-  - stopper: SampleProportion
+  - stopper: Ensemble
 
 TRAINING:
   - confidence: 0.95

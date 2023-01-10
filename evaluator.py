@@ -19,6 +19,11 @@ class Evaluator:
             self.out = lambda *a: None
 
     def initialise(self, sample, test_data):
+        """
+        Initialise evaluator object
+        :param sample: initial dataset sample
+        :param test_data: testing data (full dataset)
+        """
         self.n.append(len(sample['y']))
         self.k.append(sum(sample['y']))
         self.r_AL.append(self.r_AL[-1] + self.k[-1])
@@ -60,6 +65,12 @@ class Evaluator:
         return
 
     def output_results(self, model, test_data):
+        """
+        Print results to console.
+        :param model: trained Machine Learning model
+        :param test_data: testing data (full dataset)
+        :return:
+        """
         preds = model.predict(test_data)
         output_string = ''
         output_string += '\nRecall: {0}'.format(self.recall[-1])
@@ -79,7 +90,6 @@ class Evaluator:
                 {'name': 'model recall', 'x': ('documents seen', self.N_AL[len(self.N_AL) - len(self.tau_model):]), 'y': ('model recall', self.tau_model)}]
 
 
-# TODO output argument, generate prefix from config
 # TODO selector, stopper should have their own output: append to a results list
 def visualise_training(results):
     """
@@ -148,7 +158,45 @@ def visualise_results(evaluators):
     return ax
 
 
+def visualise_configs(work_saves, recalls):
+    N = len(work_saves)
+    # normalise colours between 0-255
+    colours = (np.arange(0, N)) / N * 255.0
+
+    # format figure
+    fig = plt.figure(constrained_layout=True)
+    ax = fig.add_gridspec(top=0.75, right=0.75).subplots()
+    ax.set(aspect=1)
+    ax.set_xlabel('Work save')
+    ax.set_ylabel('Recall')
+
+    # create distribution axes
+    ax_histx = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
+    ax_histy = ax.inset_axes([1.05, 0, 0.25, 1], sharey=ax)
+
+    # create distribution plots
+    p = scatter_hist(np.array(work_saves), np.array(recalls), ax, colours, ax_histx, ax_histy)
+
+    # create colour bar
+    fig.colorbar(p, ax=ax)
+
+    # show and save plot to file
+    plt.show()
+    # ax.figure.savefig('recall-work.png', dpi=300)
+    return ax
+
+
 def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
+    """
+    Plots scatter plot with histograms showing distributions
+    :param x: x-axis values
+    :param y: y-axis values
+    :param ax: axis object for plot
+    :param colours: colour of the scatter plot
+    :param ax_histx: axis for the x histogram
+    :param ax_histy: axis for the y histogram
+    :return: scatter plot
+    """
     # no labels
     ax_histx.tick_params(axis="x", labelbottom=False)
     ax_histy.tick_params(axis="y", labelleft=False)

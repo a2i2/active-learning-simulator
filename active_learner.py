@@ -18,8 +18,6 @@ class ActiveLearner:
 
         # handling progress and evaluator output
         if verbose:
-            self.pbar = tqdm(total=self.max_iter, position=0, leave=True)
-
             def progress(active_learner):
                 active_learner.pbar.update()
                 print('Recall:', active_learner.evaluator.recall[-1])
@@ -68,6 +66,7 @@ class ActiveLearner:
         self.initialise(data)
         self.initial_sampling()
         self.active_learn()
+        self.random_learn()
         return self.indice_mask, self.relevant_mask
 
     # initialise active learner parameters
@@ -163,7 +162,6 @@ class ActiveLearner:
         self.end_progress(self)
         return
 
-    # TODO random learning
     # random learning loop
     def random_learn(self):
         """
@@ -177,8 +175,6 @@ class ActiveLearner:
             if len(test_indices) == 0:
                 break
 
-            # add screened instances to training data
-            train_data = self.data.iloc[train_indices]
             # new test dataset excludes screened instances
             test_data = self.data.iloc[test_indices]
 
@@ -192,6 +188,7 @@ class ActiveLearner:
 
             # update eval
             self.update_evaluator(self.model, sample, self.data)
+
             # print progress
             self.progress(self)
 
@@ -200,7 +197,6 @@ class ActiveLearner:
                 break
 
         # final
-        train_data = self.data.iloc[train_indices]
         self.end_progress(self)
         return
 

@@ -7,13 +7,10 @@ import yaml
 from data_extraction import process_file_string
 
 
-# TODO use yaml instead for config file. make compatible with a folder of config files to run multiple times
-
 # handle input arguments: specify model name + parameters
 def parse_CLI():
     """
     Parses command line arguments into program parameters and algorithms
-
     :return: parameters for the program, model selector stopper evaluator etc.
     """
     # add optional arguments to look for
@@ -45,6 +42,11 @@ def parse_CLI():
 
 
 def read_yml(config_file):
+    """
+    Reads a yaml configuration file and provides the relevant simulation parameters
+    :param config_file: file path of the configuration file
+    :return: data, algorithm, and training parameters
+    """
     with open(config_file, 'r') as f:
         config_object = yaml.load(f, Loader=yaml.FullLoader)
     data_args = combine_dict_list(config_object["DATA"])
@@ -58,6 +60,11 @@ def read_yml(config_file):
 
 
 def combine_dict_list(dlist):
+    """
+    Helper function for parsing yaml files. Combines list into single dictionary
+    :param dlist: list of dictionaries
+    :return: single flattened dictionary
+    """
     result = {}
     for d in dlist:
         result.update(d)
@@ -65,6 +72,11 @@ def combine_dict_list(dlist):
 
 
 def read_ini(config_file):
+    """
+    Reads an ini configuration file and provides the relevant simulation parameters
+    :param config_file: file path of the configuration file
+    :return: data, algorithm, and training parameters
+    """
     config_object = ConfigParser()
     config_object.read(config_file)
 
@@ -103,7 +115,7 @@ def get_params(data_args, algorithm_args, training_args):
     # specify dataset
     data_name, data_file_type = process_file_string(data_args['data'][0])
 
-    # training hyperparameters
+    # training hyper parameters
     confidence = float(training_args['confidence'][0])
 
     # machine learning model parameters

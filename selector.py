@@ -69,7 +69,7 @@ class HighestConfidence(Selector):
         :return: indices of the sample instances
         """
         # randomly sample from test set to be training instances
-        sample_indices = np.random.choice(data_indices, self.batch_size, replace=False)
+        sample_indices = np.random.choice(data_indices, min(self.batch_size, data_indices.size), replace=False)
         return sample_indices
 
     def select(self, test_indices, predictions):
@@ -109,7 +109,7 @@ class LowestEntropy(Selector):
 
     def initial_select(self, data, data_indices):
         # randomly sample from test set to be training instances
-        sample_indices = np.random.choice(data_indices, self.batch_size, replace=False)
+        sample_indices = np.random.choice(data_indices, min(self.batch_size, data_indices.size), replace=False)
         return sample_indices
 
     def select(self, test_indices, predictions):
@@ -155,7 +155,7 @@ class WeightedSample(Selector):
 
     def initial_select(self, data, data_indices):
         # randomly sample from test set to be training instances
-        sample_indices = np.random.choice(data_indices, self.batch_size, replace=False)
+        sample_indices = np.random.choice(data_indices, min(self.batch_size, data_indices.size), replace=False)
         return sample_indices
 
     def select(self, test_indices, predictions):

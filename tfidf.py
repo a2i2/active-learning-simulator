@@ -123,7 +123,7 @@ def separate_punctuation(text, rem_punc, keep_punc):
     # remove unwanted punctuation
     new_text = text.translate(translator)
     # split wanted punctuation
-    new_text = re.sub(r'[^\w\s]', '', text)
+    new_text = re.sub(r'[^\w\s]', '', new_text)
     return new_text
 
 
@@ -143,8 +143,8 @@ def remove_misc(text):
     :return: new text without undesired articles
     """
     new_text = re.sub('@[^\s]+', '', text)
-    new_text = re.sub('((www.[^s]+)|(https?://[^s]+))', '', text)
-    new_text = re.sub('[0-9]+', '', text)
+    new_text = re.sub('((www.[^s]+)|(https?://[^s]+))', '', new_text)
+    new_text = re.sub('[0-9]+', '', new_text)
     return new_text
 
 
@@ -156,7 +156,7 @@ def stemming(text):
     """
     stemmer = nltk.PorterStemmer()
     stemmed = [stemmer.stem(word) for word in text]
-    return text
+    return stemmed # text
 
 
 def lemmatizer(text):
@@ -167,7 +167,7 @@ def lemmatizer(text):
     """
     lemmatizer = nltk.WordNetLemmatizer()
     lemmatized = [lemmatizer.lemmatize(word) for word in text]
-    return text
+    return lemmatized # text
 
 
 def compute_TFIDF(data, max_features):

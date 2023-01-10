@@ -44,7 +44,7 @@ TRAINING:
   - confidence: 0.95
   - verbose: 
 ```
-.ini:
+
 ```ini
 ; .ini
 [DATA]
@@ -79,7 +79,7 @@ To add algorithms for the model, selector, or stopper, refer to class specificat
 Systematic review datasets obtained from:
 https://github.com/asreview/systematic-review-datasets
 
-Currently support format:
+Currently supported formats:
 - raw CSV data with columns 'record_id', 'title', 'abstract', 'label_included'
 - 'title' and 'abstract' are used as the raw features in new column named 'x'
 - 'label_included' specifies whether an instance is *irrelevant* (class 0) or *relevant* (class 1)

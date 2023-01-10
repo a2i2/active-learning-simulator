@@ -5,10 +5,11 @@ import pandas as pd
 from tfidf import compute_TFIDF
 
 
-def get_datasets(data_name, data_file_type, working_directory):
+def get_datasets(data_name, data_file_type, working_directory, max_datasets):
     """
     Get data from different formats and file types. Loads from .zip, directory with csv datas, directory with pkl datas
 
+    :param max_datasets:
     :param data_name: name of the data directory or file
     :param data_file_type: string name of the data file type (None if directory)
     :param working_directory: working directory of the program
@@ -19,7 +20,11 @@ def get_datasets(data_name, data_file_type, working_directory):
         extract_datasets(data_name, working_directory)
     # load each dataset
     datasets = []
+    num_datasets = 0
     for data_path in os.listdir(working_directory + data_name):
+        if num_datasets - max_datasets == 0:
+            break
+        num_datasets += 1
         (name, file_type) = process_file_string(data_path)
         # load csv dataset
         if file_type == 'csv':
