@@ -16,7 +16,7 @@ def parse_CLI():
     # add optional arguments to look for
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('config', help='Name of the config file (optional), overrides other command line arguments',
+    parser.add_argument('config', help='Name of the config file or directory',
                         default='')
     args = parser.parse_args()
 
@@ -114,8 +114,11 @@ def get_params(data_args, algorithm_args, training_args):
     """
     # specify dataset
     data_name, data_file_type = process_file_string(data_args['data'][0])
+    data_number = -1
+    if len(data_args['data']) > 1:
+        data_number = int(data_args['data'][1])
 
-    # training hyper parameters
+    # training hyperparameters
     confidence = float(training_args['confidence'][0])
 
     # machine learning model parameters
@@ -156,7 +159,7 @@ def get_params(data_args, algorithm_args, training_args):
     active_learner_verbosity = 'active_learner' in verbosity_args
 
     # compile parameters
-    params = {'data': (data_name, data_file_type),
+    params = {'data': (data_name, data_file_type, data_number),
               'confidence': confidence,
               'model': (model_, model_params, model_verbosity),
               'selector': (selector_, selector_params, selector_verbosity),

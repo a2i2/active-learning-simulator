@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+
 class Evaluator:
     def __init__(self, data, verbose=True):
         self.n = [0]  # number of documents sampled during training
@@ -13,6 +14,7 @@ class Evaluator:
         self.k = [0]  # number of relevants sampled during training
         self.work_save = [0.0]  # actual work save during training
         self.tau_model = [0.0]  # recall of the ML model during training
+        self.screen_indices = []
         if verbose:
             self.out = self.output_results
         else:
@@ -31,6 +33,7 @@ class Evaluator:
         self.N_AL.append(self.N_AL[-1] + self.n[-1])
         self.work_save.append(1 - self.N_AL[-1] / self.N)
         self.tau_model.append(0)
+        self.screen_indices += list(sample.index.values)
         return
 
     def update(self, model, sample, test_data):
@@ -49,6 +52,7 @@ class Evaluator:
         self.work_save.append(1 - self.N_AL[-1] / self.N)
         preds = model.predict(test_data)
         self.tau_model.append(sum(test_data['y'] * preds) / self.r_total)
+        self.screen_indices += list(sample.index.values)
         return
 
     def reset(self):
@@ -62,6 +66,7 @@ class Evaluator:
         self.k = [0]
         self.work_save = [0]
         self.tau_model = [0]
+        self.screen_indices = []
         return
 
     def output_results(self, model, test_data):

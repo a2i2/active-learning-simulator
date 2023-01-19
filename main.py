@@ -11,7 +11,7 @@ from stopper import *
 from datetime import datetime
 
 working_directory = './'
-num_datasets = -1 # set to -1 for all datasets
+#TODO add 95% recall line to plots
 
 
 def main():
@@ -45,7 +45,7 @@ def main():
         pp.pprint(param)
         print()
         # get datasets to train the program on
-        full_datasets = get_datasets(param['data'][0], param['data'][1], working_directory, num_datasets)
+        full_datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
         # truncate datasets for speed
         data_start = 0
         data_end = len(full_datasets)
@@ -98,8 +98,8 @@ def main():
         save_output_text(output_string, output_file_name)
 
         # visualise training results of a particular evaluator
-        evaluator = active_learners[0].evaluator
-        stopper = active_learners[0].stopper
+        evaluator = active_learners[1].evaluator
+        stopper = active_learners[1].stopper
         metrics = [*(evaluator.get_eval_metrics()), *(stopper.get_eval_metrics())]
         axs = visualise_training(metrics)
 

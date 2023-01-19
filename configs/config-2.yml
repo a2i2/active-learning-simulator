@@ -1,10 +1,10 @@
 DATA:
-  - data: datasets
+  - data: datasets 5
 
 ALGORITHMS:
-  - model: LR
+  - model: SVC
   - selector: HighestConfidence
-  - stopper: Ensemble
+  - stopper: ConsecutiveCount
 
 TRAINING:
   - confidence: 0.95

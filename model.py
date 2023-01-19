@@ -233,3 +233,25 @@ class NaiveBayes(Model):
         self.likelihoods = {'mean': 0, 'var': 0}
         return
 
+
+class Ideal(Model):
+    def __init__(self, **params):
+        pass
+
+    def train(self, train_data):
+        return
+
+    def test(self, test_data):
+        y_prob = list(test_data['y'])
+        return list(zip(y_prob, y_prob))
+
+    def predict(self, test_data):
+        y_pred = test_data['y']
+        return y_pred
+
+    def score(self, test_data):
+        score = None
+        return score
+
+    def reset(self, **params):
+        return

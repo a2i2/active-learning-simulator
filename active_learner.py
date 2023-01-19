@@ -153,7 +153,7 @@ class ActiveLearner:
 
             # stopping criteria
             if self.stopper.stopping_criteria(sample):
-                break
+                break # continue from here
 
         # final model
         train_data = self.data.iloc[train_indices]

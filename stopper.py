@@ -1,3 +1,4 @@
+import importlib
 import math
 from abc import ABC, abstractmethod
 
@@ -39,40 +40,6 @@ class Stopper(ABC):
         pass
 
 
-class SampleSize(Stopper):
-    """
-    Stops active learning when the sample does not produce any more relevant documents. Naive approach.
-
-    Attributes:
-
-    - verbose: when true, outputs progress
-    """
-    def __init__(self, verbose=True):
-        if verbose:
-            self.out = self.verbose_output
-        else:
-            self.out = lambda *a: None
-
-    def initialise(self, sample):
-        return
-
-    def stopping_criteria(self, sample):
-        stop = len(sample) == 0
-        self.out(stop)
-        return stop
-
-    def reset(self):
-        return
-
-    def get_eval_metrics(self):
-        return []
-
-    def verbose_output(self, stop):
-        if stop:
-            print('Stopping criteria reached: screening sample size is 0')
-        return
-
-
 class SampleProportion(Stopper):
     """
     Determines an estimate proportion of relevant documents in the dataset. Calculates the number of relevants documents
@@ -86,7 +53,7 @@ class SampleProportion(Stopper):
     - N: total number of documents in the dataset
     - verbose: when true, outputs progress
     """
-    def __init__(self, N, tau_target, verbose=True):
+    def __init__(self, N, tau_target=0.95, verbose=True):
         self.tau_target = tau_target
         self.r_total = 0
         self.r_AL = 0
@@ -359,3 +326,125 @@ class Ensemble(Stopper):
         print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
         return
 
+
+class ConsecutiveCount(Stopper):
+    """
+    Ceases active learning when consecutive number of irrelevant documents are seen
+
+    Attributes:
+
+    - N: total number of documents in the full dataset
+    - threshold: maximum number of allowable irrelevant documents
+    - count: number of current irrelevant documents seen consecutively
+    - verbose: when true, outputs progress
+    """
+    def __init__(self, N, tau_target=0.95, threshold=0.05, verbose=False):
+        self.N = N
+        self.threshold = threshold * self.N
+        self.count = 0
+        self.counts = []
+        self.k = 0
+        self.r_AL = 0
+        if verbose:
+            self.out = self.verbose_output
+        else:
+            self.out = lambda *a: None
+
+    def initialise(self, sample):
+        """
+        Initialise the stopper
+        :param sample: sample data to evaluate
+        """
+        self.count = 0
+        return
+
+    def stopping_criteria(self, sample):
+        """
+        Determines if the active learning should be terminated depending on the current number of consecutive
+        irrelevant documents seen
+
+        :param sample: sample data to evaluate
+        :return: True if AL should cease
+        """
+        self.k = sum(sample['y'])
+        self.r_AL += self.k
+        stop = False
+        # calculate p-value for every addition of sample instances
+        for i in range(len(sample)):
+            y = sample.iloc[i]['y']
+            self.count = (not y) * (self.count + 1)
+            self.counts.append(self.count)
+            if self.count >= self.threshold:
+                stop = True
+                break
+        return stop
+
+    def reset(self):
+        """
+        Resets stopper parameters and variables
+
+        :return:
+        """
+        self.count = 0
+        self.k = 0
+        return
+
+    def get_eval_metrics(self):
+        return [{'name': 'consecutive irrelevant count', 'x': ('iterations', range(len(self.counts))), 'y': ('irrelevant counts', self.counts)}]
+
+    def verbose_output(self):
+        """
+        Provides verbose outputting for stopper when enabled.
+        """
+        print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
+        return
+
+
+class Ensembler(Stopper):
+    """
+
+    """
+    def __init__(self, N, tau_target=0.95, *stoppers, verbose=False):
+        self.stoppers = []
+        for stopper in stoppers:
+            self.stoppers.append(globals()[stopper](N, tau_target))
+        # verbosity
+        if verbose:
+            self.out = self.verbose_output
+        else:
+            self.out = lambda *a: None
+
+    def initialise(self, sample):
+        for stopper in self.stoppers:
+            stopper.initialise(sample)
+        return
+
+    def stopping_criteria(self, sample):
+        stop = False
+        for stopper in self.stoppers:
+            stop *= stopper.stopping_criteria(sample)
+        return stop
+
+    def reset(self):
+        """
+        Resets stopper parameters and variables
+
+        :return:
+        """
+        for stopper in self.stoppers:
+            stopper.reset()
+        return
+
+    def get_eval_metrics(self):
+        metrics = []
+        for stopper in self.stoppers:
+            metrics.append(*stopper.get_eval_metrics())
+        return metrics
+
+    def verbose_output(self):
+        """
+        Provides verbose outputting for stopper when enabled.
+        """
+        for stopper in self.stoppers:
+            stopper.verbose_output()
+        return

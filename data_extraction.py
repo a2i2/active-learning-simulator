@@ -1,6 +1,8 @@
 import re
 import zipfile
 import os
+
+import numpy as np
 import pandas as pd
 from tfidf import compute_TFIDF
 
@@ -24,8 +26,8 @@ def get_datasets(data_name, data_file_type, working_directory, max_datasets):
     for data_path in os.listdir(working_directory + data_name):
         if num_datasets - max_datasets == 0:
             break
-        num_datasets += 1
         (name, file_type) = process_file_string(data_path)
+        print(name, file_type)
         # load csv dataset
         if file_type == 'csv':
             data = load_csv_data(working_directory + data_name + '/' + data_path, 'record_id',
@@ -39,12 +41,16 @@ def get_datasets(data_name, data_file_type, working_directory, max_datasets):
         else:
             print('WARNING:', file_type, 'is an unsupported data type')
             continue
+
         # compute TF-IDF feature representation
+        if data.iloc[0]['x'].__class__ != list:
+            data = compute_TFIDF(data, 1000)
         try:
             a = len(data.iloc[0]['x'])
         except TypeError:
             data = compute_TFIDF(data, 1000)
         datasets.append(data)
+        num_datasets += 1
     return datasets
 
 
@@ -72,6 +78,7 @@ def load_csv_data(data_path, index_name, feature_names, label_name):
     :return: pandas DataFrame of the dataset, including features 'x' and labels 'y'
     """
     data = pd.read_csv(data_path, index_col=index_name, usecols=[index_name, *feature_names, label_name])
+    data.index = data.index - data.index[0]
     return data
 
 
