@@ -1,5 +1,5 @@
 DATA:
-  - data: data 1
+  - data: data 2
 
 ALGORITHMS:
   - model: LR
@@ -7,5 +7,5 @@ ALGORITHMS:
   - stopper: Statistical
 
 TRAINING:
-  - confidence: 0.95
+  - confidence: 0.5
   - verbose:

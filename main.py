@@ -92,8 +92,11 @@ def main():
         print('Minimum work save:', min_work_save)
         print()
 
-        output_file_name = output_directory + '/' + param['name']
-        save_output_text(output_string, output_file_name)
+        output_path = output_directory + '/' + param['name']
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
+
+        save_output_text(output_string, output_path, "results.txt")
 
         # visualise training results of a particular evaluator
         evaluator = active_learners[0].evaluator
@@ -104,7 +107,9 @@ def main():
         # visualise the overall training results
         evaluators = [a.evaluator for a in active_learners]
         ax = visualise_results(evaluators)
-        ax.figure.savefig(output_file_name + '_' + 'recall-work.png', dpi=300)
+        ax.figure.savefig(output_path + '/recall-work.png', dpi=300)
+
+        output_results(active_learners, output_path)
 
     # config metrics
     ax = visualise_configs(mean_work_saves, mean_recalls)
@@ -151,8 +156,8 @@ def run_model(data, params):
 
 
 
-def save_output_text(string, file_name):
-    with open(file_name + '_results.txt', 'w') as f:
+def save_output_text(string, output_path, file_name):
+    with open("{path}/{name}".format(path=output_path, name=file_name), 'w') as f:
         f.write(string)
 
 

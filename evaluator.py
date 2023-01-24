@@ -1,20 +1,23 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-
+import json
 
 
 class Evaluator:
     def __init__(self, data, verbose=True):
+        self.N = len(data)  # total number of documents in dataset
+        self.r_total = sum(data['y'])  # total number of actual relevants in dataset
+
         self.n = [0]  # number of documents sampled during training
         self.r_AL = [0]  # number of relevants seen
-        self.r_total = sum(data['y'])  # total number of actual relevants in dataset
         self.recall = [0]  # actual recall during training
-        self.N = len(data)  # total number of documents in dataset
         self.N_AL = [0]  # total number of documents seen during training
         self.k = [0]  # number of relevants sampled during training
         self.work_save = [0.0]  # actual work save during training
         self.tau_model = [0.0]  # recall of the ML model during training
-        self.screen_indices = []
+        self.screen_indices = [] # indices of the screened instances in order of screening
         if verbose:
             self.out = self.output_results
         else:
@@ -93,6 +96,61 @@ class Evaluator:
     def get_eval_metrics(self):
         return [{'name': 'recall', 'x': ('documents seen', self.N_AL), 'y': ('recall', self.recall)},
                 {'name': 'model recall', 'x': ('documents seen', self.N_AL[len(self.N_AL) - len(self.tau_model):]), 'y': ('model recall', self.tau_model)}]
+
+
+def output_results(active_learners, output_path):
+    overall = [{'name': 'recall', 'x': ('dataset', []), 'y': ('recall', [])},
+               {'name': 'work_save', 'x': ('dataset', []), 'y': ('work save', [])}]
+
+    for i, AL in enumerate(active_learners):
+        results = []
+        evaluator = AL.evaluator
+        stopper = AL.stopper
+
+        results.append(
+            {'name': 'documents_sampled', 'x': ('iterations', list(range(len(evaluator.n)))), 'y': ('documents', evaluator.n)})
+        results.append(
+            {'name': 'relevants_sampled', 'x': ('iterations', list(range(len(evaluator.k)))), 'y': ('documents', evaluator.k)})
+
+        results.append(
+            {'name': 'documents_seen', 'x': ('iterations', list(range(len(evaluator.N_AL)))), 'y': ('documents', evaluator.N_AL)})
+        results.append(
+            {'name': 'relevants_seen', 'x': ('iterations', list(range(len(evaluator.r_AL)))), 'y': ('documents', evaluator.r_AL)})
+
+        results.append(
+            {'name': 'true_recall', 'x': ('iterations', list(range(len(evaluator.recall)))), 'y': ('recall', evaluator.recall)})
+        results.append(
+            {'name': 'true_work_save', 'x': ('iterations', list(range(len(evaluator.work_save)))), 'y': ('work save', evaluator.work_save)})
+        results.append(
+            {'name': 'model_recall', 'x': ('iterations', list(range(len(evaluator.tau_model)))), 'y': ('recall', evaluator.tau_model)})
+
+        results.append(
+            {'name': 'screened_indices', 'x': ('iterations', list(range(len(evaluator.screen_indices)))), 'y': ('indices', list(map(int, evaluator.screen_indices)))})
+
+        results += stopper.get_eval_metrics()
+
+        output_name = "{path}/dataset_{name}".format(path=output_path, name=(i+1))
+        with open(output_name, 'w') as f:
+            json.dump(results, f)
+
+        overall[0]['x'][1].append(i)
+        overall[0]['y'][1].append(evaluator.recall[-1])
+        overall[1]['x'][1].append(i)
+        overall[1]['y'][1].append(evaluator.work_save[-1])
+
+    recalls = overall[0]['y'][1]
+    mean_recall = sum(recalls) / len(recalls)
+    min_recall = min(recalls)
+
+    work_saves = overall[1]['y'][1]
+    mean_work_save = sum(work_saves) / len(work_saves)
+    min_work_save = min(work_saves)
+
+    overall.append({'mean_recall': mean_recall, 'min_recall': min_recall, 'mean_work_save': mean_work_save, 'min_work_save': min_work_save})
+
+    output_name = "{path}/{name}".format(path=output_path, name="overall")
+    with open(output_name, 'w') as f:
+        json.dump(overall, f)
 
 
 # TODO selector, stopper should have their own output: append to a results list
@@ -234,3 +292,6 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     plt.text(max_xlim * 0.7, y.mean() * 0.95, 'Mean: {:.2f}'.format(y.mean()))
 
     return p
+
+
+

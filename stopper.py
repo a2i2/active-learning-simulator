@@ -216,7 +216,7 @@ class Statistical(Stopper):
         return
 
     def get_eval_metrics(self):
-        return [{'name': 'p-values', 'x': ('iterations', range(len(self.ps))), 'y': ('p-values', self.ps)}]
+        return [{'name': 'p-values', 'x': ('iterations', list(range(len(self.ps)))), 'y': ('p-values', self.ps)}]
 
     def verbose_output(self):
         """
