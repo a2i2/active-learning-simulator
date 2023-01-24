@@ -172,67 +172,6 @@ class MLP(Model):
         self.model = MLPClassifier(**params)
         return
 
-# TODO incremental model training
-class NaiveBayes(Model):
-    def __init__(self, **params):
-        self.N = 0
-        self.priors_counts = 0
-        self.likelihoods = {'mean': 0, 'var': 0}
-
-    def train(self, data):
-        self.calc_priors(data)
-        self.calc_likelihoods(data)
-
-    def calc_priors(self, data):
-        sample_count = sum(data['y'])
-        self.priors_counts += sample_count
-
-    def calc_likelihoods(self, data):
-        Ns = len(data['y'])
-        sample_mean = np.mean(data['x'], axis=1)
-        sample_var = np.std(data['x'], axis=1)
-
-        new_N = self.N + Ns
-        new_mean = (self.N * self.likelihoods['mean'] + Ns * sample_mean) / new_N
-
-        denom = new_N**2
-        new_var = self.N ** 2 / denom * self.likelihoods['var'] + Ns**2 / denom * sample_var
-
-        self.likelihoods = {'mean': new_mean, 'var': new_var}
-        self.N = new_N
-
-    def test(self, test_data):
-
-        return
-
-    def lognormpdf(self, x, mean, sd):
-        # epsilon smoothing
-        epsilon = 1e-9
-        sd += epsilon
-
-        var = np.power(sd, 2)
-        den = np.sqrt(2 * np.pi * var)
-        num = np.exp(-np.power(x - mean, 2) / (2 * var))
-
-        P = num / den
-        # check for 0 probabilities
-        P += epsilon
-        logP = np.log2(P)
-        return logP
-
-    def predict(self, test_data):
-        return
-
-    def score(self, test_data):
-
-        return
-
-    def reset(self, **params):
-        self.N = 0
-        self.priors_counts = 0
-        self.likelihoods = {'mean': 0, 'var': 0}
-        return
-
 
 class Ideal(Model):
     def __init__(self, **params):
@@ -243,7 +182,8 @@ class Ideal(Model):
 
     def test(self, test_data):
         y_prob = list(test_data['y'])
-        return list(zip(y_prob, y_prob))
+        y_prob = np.vstack((y_prob, y_prob)).T
+        return y_prob
 
     def predict(self, test_data):
         y_pred = test_data['y']

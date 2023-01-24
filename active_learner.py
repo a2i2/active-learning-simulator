@@ -66,7 +66,7 @@ class ActiveLearner:
         self.initialise(data)
         self.initial_sampling()
         self.active_learn()
-        self.random_learn()
+        # self.random_learn()
         return self.indice_mask, self.relevant_mask
 
     # initialise active learner parameters
@@ -105,15 +105,19 @@ class ActiveLearner:
             train_indices = self.data_indices[self.indice_mask == 1]
             # new test dataset excludes screened instances
             test_data = self.data.iloc[test_indices]
+            train_data = self.data.iloc[train_indices]
 
             # initialise, update stopper
             self.stopper.initialise(sample)
+            if self.stopper.stop:
+                break
+
             # update evaluator
             self.initialise_evaluator(sample, self.data)
 
             # check if sample has two classes
-            sample_sum = sum(sample['y'])
-            if sample_sum != len(sample['y']) and sample_sum != 0:
+            sample_sum = sum(train_data['y'])
+            if sample_sum != len(train_data['y']) and sample_sum != 0:
                 break
 
     # active learning loop
@@ -136,7 +140,7 @@ class ActiveLearner:
 
             # train and test model
             self.model.train(train_data)
-            preds = self.model.test(test_data)  # -model.test(test_data)[:, 1] ??
+            preds = self.model.test(test_data)  # note: -model.test(test_data)[:, 1] ??
 
             # screen test instances
             sample_indices = self.selector.select(test_indices, preds)
@@ -152,13 +156,18 @@ class ActiveLearner:
             self.progress(self)
 
             # stopping criteria
-            if self.stopper.stopping_criteria(sample):
-                break # continue from here
+            self.stopper.stopping_criteria(sample)
+            if self.stopper.stop == 1:
+                break
+            # commence random sampling, no active learning
+            elif self.stopper.stop == -1:
+                self.random_learn()
+                break
 
         # final model
         train_data = self.data.iloc[train_indices]
         self.model.train(train_data)
-
+        self.model.test(self.data)
         self.end_progress(self)
         return
 
@@ -193,7 +202,8 @@ class ActiveLearner:
             self.progress(self)
 
             # stopping criteria
-            if self.stopper.stopping_criteria(sample):
+            self.stopper.stopping_criteria(sample)
+            if self.stopper.stop:
                 break
 
         # final

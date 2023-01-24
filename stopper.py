@@ -16,6 +16,12 @@ class Stopper(ABC):
     - stopping_criteria: determines if a particular criteria for stopping has been met from the newly selected sample, called each iteration of the AL training
     - reset: resets any parameters and variables
     """
+    def __init__(self, N, confidence):
+        self.stop = False
+        self.N = N
+        self.confidence = confidence
+        pass
+
     @abstractmethod
     def initialise(self, sample):
         pass
@@ -33,6 +39,7 @@ class Stopper(ABC):
 
     @abstractmethod
     def reset(self):
+        self.stop = False
         pass
 
     @abstractmethod
@@ -54,6 +61,7 @@ class SampleProportion(Stopper):
     - verbose: when true, outputs progress
     """
     def __init__(self, N, tau_target=0.95, verbose=True):
+        super().__init__(N, tau_target)
         self.tau_target = tau_target
         self.r_total = 0
         self.r_AL = 0
@@ -76,9 +84,9 @@ class SampleProportion(Stopper):
     def stopping_criteria(self, sample):
         self.k = sum(sample['y'])
         self.r_AL = self.r_AL + self.k
-        stop = (self.r_AL >= self.tau_target * self.r_total)
+        self.stop = (self.r_AL >= self.tau_target * self.r_total)
         self.out()
-        return stop
+        return
 
     def reset(self):
         return
@@ -115,6 +123,7 @@ class Statistical(Stopper):
     - verbose: when true, outputs progress
     """
     def __init__(self, N, tau_target=0.95, alpha=0.95, verbose=False):
+        super().__init__(N, tau_target)
         self.tau_target = tau_target
         self.N = N
         self.N_s = self.N
@@ -147,7 +156,7 @@ class Statistical(Stopper):
         :param sample: sample data to evaluate
         :return: True if AL should cease
         """
-        stop = False
+        self.stop = False
         self.k = 0
         # calculate p-value for every addition of sample instances
         for i in range(len(sample)):
@@ -163,12 +172,12 @@ class Statistical(Stopper):
             self.K_hats = np.ceil(self.r_AL / self.tau_target) - (self.r_AL - Xs)
             p = hypergeom.cdf(Xs, self.N_s + ns, self.K_hats, ns + 1).min()
             self.ps.append(p)
+            # adjust alpha for random sampling
             if p < 1 - self.alpha:
-                stop = True
+                self.stop = -1
                 self.alpha = self.alpha_stage_2
         self.out()
-        # self.estimate_progress()
-        return stop
+        return
 
     def estimate_progress(self):
         """
@@ -217,116 +226,6 @@ class Statistical(Stopper):
         return
 
 
-class Ensemble(Stopper):
-    """
-    Uses hyper geometric sampling to estimate a p-value for stopping criteria, and compares to a predicted proportion
-
-    Attributes:
-
-    - tau_target: target recall
-    - N: total number of documents in the full dataset
-    - N_s: total number of documents left in the dataset
-    - r_AL: current number of relevant documents screened by the active learner
-    - k: number of relevant documents in the sample
-    - alpha: confidence level
-    - Ys: screening results during training
-    - ps: p-values during training
-    - K_hats: estimate K values during training
-    - n_est: estimate number of documents to be screened during training
-    - verbose: when true, outputs progress
-    """
-    def __init__(self, N, tau_target=0.95, alpha=0.95, verbose=False):
-        # statistical method
-        self.tau_target = tau_target
-        self.N = N
-        self.N_s = self.N
-        self.r_AL = 0
-        self.k = 0
-        self.alpha_stage_1 = alpha / 2
-        self.alpha_stage_2 = alpha
-        self.alpha = self.alpha_stage_1
-        self.Ys = []
-        self.ps = []
-        self.K_hats = []
-        self.n_est = []
-        # sample proportion
-        self.r_total = 0
-        # verbosity
-        if verbose:
-            self.out = self.verbose_output
-        else:
-            self.out = lambda *a: None
-
-    def initialise(self, sample):
-        """
-        Initialise the stopper
-        :param sample: sample data to evaluate
-        """
-        # baseline inclusion rate
-        labels = sample['y']
-        BIR = sum(labels) / len(sample)
-        # estimate total number of relevants
-        self.r_total = BIR * self.N
-        self.stopping_criteria(sample)
-        return
-
-    def stopping_criteria(self, sample):
-        """
-        Determines if the active learning should be terminated depending on the calculated p-value.
-
-        :param sample: sample data to evaluate
-        :return: True if AL should cease
-        """
-        stop = False
-        self.k = 0
-        # calculate p-value for every addition of sample instances
-        for i in range(len(sample)):
-            y = sample.iloc[i]['y']
-            self.k += y
-            self.r_AL += + y
-            self.N_s -= 1
-
-            self.Ys.append(y)
-            Xs = np.cumsum(self.Ys[::-1])
-            ns = np.arange(len(self.Ys))
-
-            self.K_hats = np.ceil(self.r_AL / self.tau_target) - (self.r_AL - Xs)
-            p = hypergeom.cdf(Xs, self.N_s + ns, self.K_hats, ns + 1).min()
-            self.ps.append(p)
-            if p < 1 - self.alpha:
-                stop = True
-                self.alpha = self.alpha_stage_2
-        stop *= (self.r_AL >= self.tau_target * self.r_total)
-        self.out()
-        return stop
-
-    def reset(self):
-        """
-        Resets stopper parameters and variables
-
-        :return:
-        """
-        self.N_s = self.N
-        self.r_AL = 0
-        self.k = 0
-        self.Ys = []
-        self.ps = []
-        self.K_hats = []
-        self.n_est = []
-        self.r_total = 0
-        return
-
-    def get_eval_metrics(self):
-        return [{'name': 'p-values', 'x': ('iterations', range(len(self.ps))), 'y': ('p-values', self.ps)}]
-
-    def verbose_output(self):
-        """
-        Provides verbose outputting for stopper when enabled.
-        """
-        print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
-        return
-
-
 class ConsecutiveCount(Stopper):
     """
     Ceases active learning when consecutive number of irrelevant documents are seen
@@ -339,6 +238,7 @@ class ConsecutiveCount(Stopper):
     - verbose: when true, outputs progress
     """
     def __init__(self, N, tau_target=0.95, threshold=0.05, verbose=False):
+        super().__init__(N, tau_target)
         self.N = N
         self.threshold = threshold * self.N
         self.count = 0
@@ -368,16 +268,16 @@ class ConsecutiveCount(Stopper):
         """
         self.k = sum(sample['y'])
         self.r_AL += self.k
-        stop = False
+        self.stop = False
         # calculate p-value for every addition of sample instances
         for i in range(len(sample)):
             y = sample.iloc[i]['y']
             self.count = (not y) * (self.count + 1)
             self.counts.append(self.count)
             if self.count >= self.threshold:
-                stop = True
+                self.stop = True
                 break
-        return stop
+        return
 
     def reset(self):
         """
@@ -405,6 +305,7 @@ class Ensembler(Stopper):
 
     """
     def __init__(self, N, tau_target=0.95, *stoppers, verbose=False):
+        super().__init__(N, tau_target)
         self.stoppers = []
         for stopper in stoppers:
             self.stoppers.append(globals()[stopper](N, tau_target))
@@ -420,10 +321,10 @@ class Ensembler(Stopper):
         return
 
     def stopping_criteria(self, sample):
-        stop = False
+        self.stop = False
         for stopper in self.stoppers:
-            stop *= stopper.stopping_criteria(sample)
-        return stop
+            self.stop *= stopper.stopping_criteria(sample)
+        return self.stop
 
     def reset(self):
         """

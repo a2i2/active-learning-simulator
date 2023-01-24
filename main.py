@@ -4,7 +4,7 @@ import pprint
 import ssl
 
 from active_learner import ActiveLearner
-from command_line_interface import parse_CLI
+from command_line_interface import parse_CLI, create_simulator_params
 from data_extraction import get_datasets
 from evaluator import *
 from stopper import *
@@ -29,7 +29,9 @@ def main():
         os.makedirs(output_directory)
 
     # get desired parameters for training
-    params = parse_CLI()
+    arg_names, args = parse_CLI(["DATA", "ALGORITHMS", "TRAINING"])
+    params = create_simulator_params(arg_names, args)
+
     pp = pprint.PrettyPrinter()
     print()
     pp.pprint(params)
@@ -45,11 +47,7 @@ def main():
         pp.pprint(param)
         print()
         # get datasets to train the program on
-        full_datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
-        # truncate datasets for speed
-        data_start = 0
-        data_end = len(full_datasets)
-        datasets = full_datasets[data_start: data_end]
+        datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
 
         # store program objects for later evaluation
         active_learners = []
@@ -98,8 +96,8 @@ def main():
         save_output_text(output_string, output_file_name)
 
         # visualise training results of a particular evaluator
-        evaluator = active_learners[1].evaluator
-        stopper = active_learners[1].stopper
+        evaluator = active_learners[0].evaluator
+        stopper = active_learners[0].stopper
         metrics = [*(evaluator.get_eval_metrics()), *(stopper.get_eval_metrics())]
         axs = visualise_training(metrics)
 
@@ -119,6 +117,7 @@ def main():
     print('Configs mean work save:', sum(mean_work_saves) / len(mean_work_saves))
     print('Configs minimum work save:', min(min_work_saves))
     print()
+    #TODO add overview / summary for config results / ouputting file
 
 
 def run_model(data, params):
@@ -139,9 +138,7 @@ def run_model(data, params):
     stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1], verbose=params['stopper'][2])
 
     # specify evaluator object if desired
-    evaluator = None
-    if params['evaluator']:
-        evaluator = params['evaluator'][0](data['train'], verbose=params['evaluator'][1])
+    evaluator = params['evaluator'][0](data['train'], verbose=params['evaluator'][1])
 
     # create active learner
     active_learner = ActiveLearner(model_AL, selector, stopper, batch_size=batch_size, max_iter=1000,
@@ -151,6 +148,7 @@ def run_model(data, params):
     (mask, relevant_mask) = active_learner.train(data['train'])
 
     return active_learner
+
 
 
 def save_output_text(string, file_name):

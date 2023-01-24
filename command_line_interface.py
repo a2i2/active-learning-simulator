@@ -3,12 +3,26 @@ import importlib
 import os
 from configparser import ConfigParser
 import yaml
+import warnings
 
 from data_extraction import process_file_string
 
 
+
+
+
+
+class CLIParser:
+    def __init__(self):
+        pass
+
+
+
+
+
+
 # handle input arguments: specify model name + parameters
-def parse_CLI():
+def parse_CLI(argument_names):
     """
     Parses command line arguments into program parameters and algorithms
     :return: parameters for the program, model selector stopper evaluator etc.
@@ -18,45 +32,75 @@ def parse_CLI():
 
     parser.add_argument('config', help='Name of the config file or directory',
                         default='')
+    parser.add_argument('-other', help='Other parameters',
+                        default='')
     args = parser.parse_args()
 
-    params = []
+    config_names, config_args = read_config_directory(args.config, argument_names)
+    return config_names, config_args
 
-    for filename in os.listdir(args.config):
-        f = os.path.join(args.config, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            config_name, config_file_type = process_file_string(filename)
-            if config_file_type == 'yml':
-                data_args, algorithm_args, training_args = read_yml(f)
-            elif config_file_type == 'ini':
-                data_args, algorithm_args, training_args = read_ini(f)
-            else:
-                continue
-        else:
-            continue
-        param = get_params(data_args, algorithm_args, training_args)
-        param['name'] = config_name
+
+def create_simulator_params(config_names, config_args):
+    params = []
+    for i, config_arg in enumerate(config_args):
+        param = get_params(config_arg[0], config_arg[1], config_arg[2])
+        param['name'] = config_names[i]
         params.append(param)
     return params
 
 
-def read_yml(config_file):
+def create_clustering_params(config_names, config_args):
+    params = []
+    for i, config_arg in enumerate(config_args):
+        param = get_params(config_arg[0], config_arg[1], config_arg[2])
+        param['name'] = config_names[i]
+        params.append(param)
+        param['clusterer'] = get_clustering_params(config_arg[3])
+    return params
+
+
+
+def read_config_directory(directory, argument_names):
+    config_names = []
+    config_args = []
+    for filename in os.listdir(directory):
+        f = os.path.join(directory, filename)
+        # checking if it is a file
+        if os.path.isfile(f):
+            config_name, config_file_type = process_file_string(filename)
+            args = read_config(f, config_name, config_file_type, argument_names)
+            if args:
+                config_args.append(args)
+                config_names.append(config_name)
+        else:
+            continue
+    return config_names, config_args
+
+
+def read_config(config_file, config_name, config_type, argument_names):
+    args = None
+    if config_type == 'yml':
+        args = read_yml(config_file, argument_names)
+    elif config_type == 'ini':
+        args = read_ini(config_file, argument_names)
+    else:
+        warnings.warn("Config file {config} is not supported".format(config=config_name))
+    return args
+
+
+def read_yml(config_file, argument_names):
     """
     Reads a yaml configuration file and provides the relevant simulation parameters
+    :param argument_names:
     :param config_file: file path of the configuration file
     :return: data, algorithm, and training parameters
     """
     with open(config_file, 'r') as f:
         config_object = yaml.load(f, Loader=yaml.FullLoader)
-    data_args = combine_dict_list(config_object["DATA"])
-    algorithm_args = combine_dict_list(config_object["ALGORITHMS"])
-    training_args = combine_dict_list(config_object["TRAINING"])
-
-    data_args = process_config_args(data_args)
-    algorithm_args = process_config_args(algorithm_args)
-    training_args = process_config_args(training_args)
-    return data_args, algorithm_args, training_args
+    args = []
+    for arg_name in argument_names:
+        args.append(process_config_args(combine_dict_list(config_object[arg_name])))
+    return args
 
 
 def combine_dict_list(dlist):
@@ -71,23 +115,19 @@ def combine_dict_list(dlist):
     return result
 
 
-def read_ini(config_file):
+def read_ini(config_file, argument_names):
     """
     Reads an ini configuration file and provides the relevant simulation parameters
+    :param argument_names:
     :param config_file: file path of the configuration file
     :return: data, algorithm, and training parameters
     """
     config_object = ConfigParser()
     config_object.read(config_file)
-
-    data_args = config_object["DATA"]
-    algorithm_args = config_object["ALGORITHMS"]
-    training_args = config_object["TRAINING"]
-
-    data_args = process_config_args(data_args)
-    algorithm_args = process_config_args(algorithm_args)
-    training_args = process_config_args(training_args)
-    return data_args, algorithm_args, training_args
+    args = []
+    for arg_name in argument_names:
+        args.append(process_config_args(config_object[arg_name]))
+    return args
 
 
 def process_config_args(args):
@@ -166,4 +206,11 @@ def get_params(data_args, algorithm_args, training_args):
               'stopper': (stopper_, stopper_params, stopper_verbosity),
               'evaluator': (evaluator_, evaluator_verbosity),
               'active_learner': (active_learner_, active_learner_verbosity)}
+    return params
+
+
+def get_clustering_params(clustering_args):
+    clusterer_module = importlib.import_module('clusterer')
+    clusterer_ = getattr(clusterer_module, clustering_args['clusterer'][0])
+    params = (clusterer_, clustering_args['clusterer'][1:])
     return params

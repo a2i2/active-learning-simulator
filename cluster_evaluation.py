@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 #Basic imports
 import os
 import pprint
@@ -25,7 +28,7 @@ from celluloid import Camera
 
 
 from active_learner import ActiveLearner
-from command_line_interface import parse_CLI
+from command_line_interface import parse_CLI, create_simulator_params, create_clustering_params
 from data_extraction import get_datasets
 
 
@@ -47,29 +50,33 @@ def main():
         os.makedirs(output_directory)
 
     # get desired parameters for training
-    params = parse_CLI()
+    arg_names, args = parse_CLI(["DATA", "ALGORITHMS", "TRAINING", "CLUSTERING"])
+    params = create_clustering_params(arg_names, args)
     pp = pprint.PrettyPrinter()
-    param = params[0]
     print()
-    pp.pprint(param)
+    pp.pprint(params)
     print()
 
-    datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
-
-    n = 3
-    for i in range(len(datasets)):
-        output_path = output_directory + "/cluster_" + str(i) + ".mp4"
-        visualise_clustering(n, datasets[i], param, output_path)
+    for i, param in enumerate(params):
+        # set randomisation seed
+        np.random.seed(0)
+        # get datasets
+        datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
+        n = 3
+        for j, data in enumerate(datasets):
+            output_path = "{path}/{config}_data_{data}.mp4".format(path=output_directory, config=param['name'], data=j)
+            visualise_clustering(n, data, param, output_path)
 
 
 def visualise_clustering(n, data, param, output_path):
     AL = run_model(data, param)
     print("Active learning complete")
     print("Recall:", AL.evaluator.recall[-1])
-    cluster_method = KMeans(n_clusters=n)
+    cluster_method = param['clusterer'][0](param['clusterer'][1])
     cluster_eval = ClusterEvaluation(cluster_method, n)
     cluster_eval.train(data)
     cluster_eval.plot_progress(*cluster_eval.make_figure(), AL, output_path)
+    AL.evaluator.output_results(AL.model, data)
 
 
 def run_model(data, params):
@@ -82,7 +89,6 @@ def run_model(data, params):
     N = len(data)
     # determine suitable batch size, batch size increases with increases dataset size
     batch_size = int(0.03 * N)
-    # TODO different batch sizes? as a parameter
 
     # create algorithm objects
     model_AL = params['model'][0](*params['model'][1])
@@ -142,24 +148,23 @@ class ClusterEvaluation:
 
     def train(self, data):
         self.N = len(data)
-        self.X = data['x'].copy(deep=True)
+        self.X = data['x'].copy(deep=True).to_frame()
         self.Y = data['y'].copy(deep=True)
         self.X = self.fit(self.X)
-        self.X = self.predict(self.X['x_scaled'])
+        self.X = self.predict(self.X)
         self.X = self.compute_PCA(self.X)
-        #self.plot(*self.make_figure(), AL.indice_mask, AL.relevant_mask)
 
     def fit(self, X):
-        X['x_scaled'] = self.scale_features(X)
-        self.clustering_method.fit(X['x_scaled'])
-        return X
+        split_X = pd.DataFrame(X.x.values.tolist(), index=X.index)
+        split_X.columns = split_X.columns.map(str)
+        scaled_features = self.scale_features(split_X)
+        self.clustering_method.fit(scaled_features)
+        scaled_features = pd.DataFrame(scaled_features, index=X.index, columns=split_X.columns)
+        return scaled_features
 
-    def scale_features(self, data):
-        X = data.to_list()
+    def scale_features(self, X):
         scaler = StandardScaler()
-        print("1")
-        scaled_features = pd.DataFrame(scaler.fit_transform(X))
-        print("2")
+        scaled_features = scaler.fit_transform(X)
         return scaled_features
 
     def predict(self, X):
@@ -198,11 +203,11 @@ class ClusterEvaluation:
         indices = (indice_mask == 1) & (relevant_mask == 0)
         ax.scatter(self.X[indices]["PC1_2D"], self.X[indices]["PC2_2D"], s=2, c=colours[indices], linewidths=0)
         # un-screened and relevant
-        indices = (indice_mask == 0) & (relevant_mask == 1)
+        indices = (indice_mask == 0) & (self.Y == 1)
         edge_colours[indices] = [1, 0, 0, 1]
         ax.scatter(self.X[indices]["PC1_2D"], self.X[indices]["PC2_2D"], s=5, c=colours[indices], edgecolors=edge_colours[indices], linewidths=0.2)
         # screened and relevant
-        indices = (indice_mask == 1) & (relevant_mask == 1)
+        indices = (relevant_mask == 1)
         edge_colours[indices] = [1, 1, 1, 1]
         ax.scatter(self.X[indices]["PC1_2D"], self.X[indices]["PC2_2D"], s=5, c=colours[indices], edgecolors=edge_colours[indices], linewidths=0.2)
         return fig, ax
@@ -215,7 +220,7 @@ class ClusterEvaluation:
         else:
             self.progress = lambda *a: None
 
-        batch_size = AL.batch_size // 10
+        batch_size = AL.batch_size // 10 + 1
         camera = Camera(fig)
         for i in range(0, len(AL.evaluator.screen_indices) - 1, batch_size):
             indices = AL.evaluator.screen_indices[0: i + 1]

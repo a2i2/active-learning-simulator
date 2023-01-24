@@ -1,10 +1,10 @@
 DATA:
-  - data: datasets 5
+  - data: data 1
 
 ALGORITHMS:
   - model: SVC
   - selector: HighestConfidence
-  - stopper: ConsecutiveCount
+  - stopper: Statistical
 
 TRAINING:
   - confidence: 0.95

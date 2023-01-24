@@ -69,8 +69,9 @@ class HighestConfidence(Selector):
         :return: indices of the sample instances
         """
         # randomly sample from test set to be training instances
-        sample_indices = np.random.choice(data_indices, min(self.batch_size, data_indices.size), replace=False)
-        return sample_indices
+        sample = np.random.choice(data_indices, min(self.batch_size, data_indices.size), replace=False)
+        self.out(sample)
+        return sample
 
     def select(self, test_indices, predictions):
         """

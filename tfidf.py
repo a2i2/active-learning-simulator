@@ -9,8 +9,6 @@ import re
 import pandas as pd
 
 
-
-
 def prep_raw_data(data):
     """
     Handler for data cleaning and preprocessing
