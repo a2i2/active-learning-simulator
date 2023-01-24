@@ -1,0 +1,11 @@
+DATA:
+  - data: data 1
+
+ALGORITHMS:
+  - model: LR
+  - selector: HighestConfidence
+  - stopper: Statistical
+
+TRAINING:
+  - confidence: 0.95
+  - verbose:

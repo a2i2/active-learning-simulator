@@ -1,0 +1,14 @@
+DATA:
+  - data: data 1
+
+ALGORITHMS:
+  - model: NB
+  - selector: HighestConfidence
+  - stopper: Statistical
+
+TRAINING:
+  - confidence: 0.9
+  - verbose:
+
+CLUSTERING:
+  - clusterer: KM 3
