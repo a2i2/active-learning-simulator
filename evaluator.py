@@ -1,8 +1,9 @@
 import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import plotly.express as px
+import pandas as pd
 
 
 class Evaluator:
@@ -98,9 +99,10 @@ class Evaluator:
                 {'name': 'model recall', 'x': ('documents seen', self.N_AL[len(self.N_AL) - len(self.tau_model):]), 'y': ('model recall', self.tau_model)}]
 
 
-def output_results(active_learners, output_path):
-    overall = [{'name': 'recall', 'x': ('dataset', []), 'y': ('recall', [])},
-               {'name': 'work_save', 'x': ('dataset', []), 'y': ('work save', [])}]
+def output_results(active_learners, output_path, output_metrics=None):
+    if output_metrics is None:
+        output_metrics = []
+    overall = [{'name': 'work save - recall', 'x': ('work_save', []), 'y': ('recall', []), 'colours': []}]
 
     for i, AL in enumerate(active_learners):
         results = []
@@ -127,54 +129,47 @@ def output_results(active_learners, output_path):
         results.append(
             {'name': 'screened_indices', 'x': ('iterations', list(range(len(evaluator.screen_indices)))), 'y': ('indices', list(map(int, evaluator.screen_indices)))})
 
-        results += stopper.get_eval_metrics()
+        # stopper metrics
+        stopper_metrics = stopper.get_eval_metrics()
+        for metric in stopper_metrics:
+            metric['name'] = 'stopper'
+            results += metric
 
-        output_name = "{path}/dataset_{name}".format(path=output_path, name=(i+1))
+        # create dataset output path
+        output_dataset_path = "{path}/dataset_{name}/".format(path=output_path, name=(i+1))
+        if not os.path.isdir(output_dataset_path):
+            os.makedirs(output_dataset_path)
+        output_name = "{path}/{name}.json".format(path=output_dataset_path, name="results")
         with open(output_name, 'w') as f:
             json.dump(results, f)
 
-        overall[0]['x'][1].append(i)
+        overall[0]['x'][1].append(evaluator.work_save[-1])
         overall[0]['y'][1].append(evaluator.recall[-1])
-        overall[1]['x'][1].append(i)
-        overall[1]['y'][1].append(evaluator.work_save[-1])
+        overall[0]['colours'].append(AL.N)
 
+        # plot desired metrics
+        for result in results:
+            if result['name'] in output_metrics:
+                ax = metric_plot(result)
+                ax.figure.savefig("{path}/{metric}.png".format(path=output_dataset_path, metric=result['name']), dpi=300)
+
+    #
     recalls = overall[0]['y'][1]
     mean_recall = sum(recalls) / len(recalls)
     min_recall = min(recalls)
 
-    work_saves = overall[1]['y'][1]
+    work_saves = overall[0]['x'][1]
     mean_work_save = sum(work_saves) / len(work_saves)
     min_work_save = min(work_saves)
 
     overall.append({'mean_recall': mean_recall, 'min_recall': min_recall, 'mean_work_save': mean_work_save, 'min_work_save': min_work_save})
 
-    output_name = "{path}/{name}".format(path=output_path, name="overall")
+    output_name = "{path}/{name}.json".format(path=output_path, name="overall")
     with open(output_name, 'w') as f:
         json.dump(overall, f)
 
-
-# TODO selector, stopper should have their own output: append to a results list
-def visualise_training(results):
-    """
-    Visualises the performance of the system on a dataset
-
-    :param results: {name : name, x : (name, vals), y : (name, vals)}
-    """
-    axs = []
-    for i, result in enumerate(results):
-        fig1, ax1 = plt.subplots()
-        ax1.set_xlabel(result['x'][0])
-        ax1.set_ylabel(result['y'][0])
-        ax1.plot(result['x'][1], result['y'][1], label=result['y'][0])
-        ax1.tick_params(axis='y')
-        fig1.tight_layout()
-        ax1.set_title(result['name'])
-        legend = ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.show()
-        axs.append(ax1)
-        #ax1.figure.savefig('output_{0}.png'.format(i), dpi=300)
-    return axs
-
+    ax = scatter_plot(overall[0], colour_label=overall[0]['colours'], marginal=True)
+    ax.write_html("{path}/{fig_name}.html".format(path=output_path, fig_name="overall"))
 
 
 def visualise_results(evaluators):
@@ -250,6 +245,34 @@ def visualise_configs(work_saves, recalls):
     return ax
 
 
+def visualise_metric(metric):
+    N = len(metric['x'][1])
+    # normalise colours between 0-255
+    colours = (np.arange(0, N)) / N * 255.0
+
+    # format figure
+    fig = plt.figure(constrained_layout=True)
+    ax = fig.add_gridspec(top=0.75, right=0.75).subplots()
+    ax.set(aspect=1)
+    ax.set_xlabel(metric['x'][0])
+    ax.set_ylabel(metric['y'][0])
+
+    # create distribution axes
+    ax_histx = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
+    ax_histy = ax.inset_axes([1.05, 0, 0.25, 1], sharey=ax)
+
+    # create distribution plots
+    p = scatter_hist(np.array(metric['x'][1]), np.array(metric['y'][1]), ax, colours, ax_histx, ax_histy)
+
+    # create colour bar
+    fig.colorbar(p, ax=ax)
+
+    # show and return plot
+    plt.show()
+    return ax
+
+
+
 def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     """
     Plots scatter plot with histograms showing distributions
@@ -290,8 +313,53 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     plt.axhline(y.mean(), color='k', linestyle='dashed', linewidth=1)
     min_xlim, max_xlim = plt.xlim()
     plt.text(max_xlim * 0.7, y.mean() * 0.95, 'Mean: {:.2f}'.format(y.mean()))
-
     return p
+
+
+
+def scatter_plot(metric, colour_label="index", marginal=True):
+    title = metric['name']
+    marginals = ""
+    if marginal:
+        marginals = "histogram"
+
+    x_label = metric['x'][0]
+    y_label = metric['y'][0]
+
+    df = pd.DataFrame({x_label: metric['x'][1], y_label: metric['y'][1]})
+    df = df.reset_index(level=0)
+
+    fig = px.scatter(df, x=x_label, y=y_label, marginal_x=marginals, marginal_y=marginals, title=title, color=colour_label)
+    #fig.update_traces(textposition='top center')
+    return fig
+
+
+def metric_plot(metric):
+    title = metric['name']
+    x_label = metric['x'][0]
+    y_label = metric['y'][0]
+
+    # plotly interactive plot
+    df = pd.DataFrame({x_label: metric['x'][1], y_label: metric['y'][1]})
+    df = df.reset_index(level=0)
+    trace1 = px.line(df, x=x_label, y=y_label, title=title)
+
+    # static plot
+    # ax = fig.add_gridspec(top=0.75, right=0.75).subplots()
+    ax = df.plot(kind='line', x=x_label, y=y_label)
+    return ax
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

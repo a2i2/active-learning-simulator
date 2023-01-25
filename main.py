@@ -10,6 +10,8 @@ from evaluator import *
 from stopper import *
 from datetime import datetime
 
+from operator import attrgetter
+
 working_directory = './'
 #TODO add 95% recall line to plots
 
@@ -25,104 +27,113 @@ def main():
     # set up output directory
     output_name = str(datetime.now())
     output_directory = working_directory + output_name
-    if not os.path.isdir(output_directory):
-        os.makedirs(output_directory)
-
-    # get desired parameters for training
-    arg_names, args = parse_CLI(["DATA", "ALGORITHMS", "TRAINING"])
-    params = create_simulator_params(arg_names, args)
 
     pp = pprint.PrettyPrinter()
-    print()
-    pp.pprint(params)
-    print()
 
-    mean_recalls = []
-    min_recalls = []
-    mean_work_saves = []
-    min_work_saves = []
+    # get desired parameters for training
+    arg_names, args = parse_CLI(["DATA", "ALGORITHMS", "TRAINING", "OUTPUT"])
+    params = create_simulator_params(arg_names, args)
 
+    configs = []
     # for each configuration
     for param in params:
+        print()
+        print()
         pp.pprint(param)
-        print()
-        # get datasets to train the program on
-        datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
 
-        # store program objects for later evaluation
-        active_learners = []
-        recalls = []
-        work_saves = []
+        # make output directory
+        output_directory = param['output_path'] + output_name
+        if not os.path.isdir(output_directory):
+            os.makedirs(output_directory)
 
-        # set randomisation seed
-        np.random.seed(0)
-
-        output_string = ''
-        # train for each dataset
-        for i, dataset in enumerate(datasets):
-            print("Analysing dataset {0} out of {1}...".format(i + 1, len(datasets)))
-            data = {'train': datasets[i], 'dev': datasets[i]}
-            active_learner = run_model(data, param)
-            active_learners.append(active_learner)
-            recalls.append(active_learner.evaluator.recall[-1])
-            work_saves.append(active_learner.evaluator.work_save[-1])
-
-            # show evaluation results
-            output_string += 'Dataset {0} out of {1}...'.format(i + 1, len(datasets))
-            output_string += active_learner.evaluator.out(active_learner.model, data['dev']) + '\n'
-
-        output_string += 'Mean recall: {0}'.format(sum(recalls) / len(recalls))
-        output_string += '\nMean work save: {0}'.format(sum(work_saves) / len(work_saves))
-
-        mean_recall = sum(recalls) / len(recalls)
-        mean_recalls.append(mean_recall)
-
-        min_recall = min(recalls)
-        min_recalls.append(min_recall)
-
-        mean_work_save = sum(work_saves) / len(work_saves)
-        mean_work_saves.append(mean_work_save)
-
-        min_work_save = min(work_saves)
-        min_work_saves.append(min_work_save)
-
-        print('Mean recall:', mean_recall)
-        print('Minimum recall:', min_recall)
-        print('Mean work save:', mean_work_save)
-        print('Minimum work save:', min_work_save)
-        print()
-
+        # make folder for each config
         output_path = output_directory + '/' + param['name']
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
 
-        save_output_text(output_string, output_path, "results.txt")
+        # get datasets to train the program on
+        datasets = get_datasets(param['data'][0], param['data'][1], param['working_path'], param['data'][2])
 
-        # visualise training results of a particular evaluator
-        evaluator = active_learners[0].evaluator
-        stopper = active_learners[0].stopper
-        metrics = [*(evaluator.get_eval_metrics()), *(stopper.get_eval_metrics())]
-        axs = visualise_training(metrics)
+        # store program objects for later evaluation
+        active_learners = []
+
+        # set randomisation seed
+        np.random.seed(0)
+
+        # train for each dataset
+        for i, dataset in enumerate(datasets):
+            print("\nAnalysing dataset {0} out of {1}...".format(i + 1, len(datasets)))
+            data = {'train': datasets[i], 'dev': datasets[i]}
+            active_learner = run_model(data, param)
+            active_learners.append(active_learner)
 
         # visualise the overall training results
-        evaluators = [a.evaluator for a in active_learners]
+        evaluators = [AL.evaluator for AL in active_learners]
         ax = visualise_results(evaluators)
         ax.figure.savefig(output_path + '/recall-work.png', dpi=300)
 
-        output_results(active_learners, output_path)
+        # visualise and compute output metrics
+        output_results(active_learners, output_path, param['output_metrics'])
 
-    # config metrics
-    ax = visualise_configs(mean_work_saves, mean_recalls)
-    ax.figure.savefig(output_directory + '/configs_' + 'mean-recall-work.png', dpi=300)
-    ax = visualise_configs(min_work_saves, min_recalls)
-    ax.figure.savefig(output_directory + '/configs_' + 'min-recall-work.png', dpi=300)
+        # compile config results
+        config = Config(param)
+        config.update_metrics(active_learners)
+        configs.append(config)
 
-    print('Configs mean recall:', sum(mean_recalls) / len(mean_recalls))
-    print('Configs minimum recall:', min(min_recalls))
-    print('Configs mean work save:', sum(mean_work_saves) / len(mean_work_saves))
-    print('Configs minimum work save:', min(min_work_saves))
-    print()
-    #TODO add overview / summary for config results / ouputting file
+    # plot config comparison results
+    axs = Config.evaluate_configs(configs)
+    for i, ax in enumerate(axs):
+        # ax.figure.savefig("{path}/{fig_name}.png".format(path=output_directory, fig_name=configs[0].metrics[i]['name']), dpi=300)
+        # ax.write_image("{path}/{fig_name}.png".format(path=output_directory, fig_name=configs[0].metrics[i]['name']))
+        ax.write_html("{path}/{fig_name}.html".format(path=output_directory, fig_name=configs[0].metrics[i]['name']))
+
+
+class Config:
+    def __init__(self, param):
+        self.metrics = []
+        self.param = param
+        pass
+
+    def update_metrics(self, active_learners):
+        recalls = []
+        work_saves = []
+        for AL in active_learners:
+            recalls.append(AL.evaluator.recall[-1])
+            work_saves.append(AL.evaluator.work_save[-1])
+
+        min_recall = min(recalls)
+        mean_recall = sum(recalls) / len(recalls)
+
+        min_work_save = min(work_saves)
+        mean_work_save = sum(work_saves) / len(work_saves)
+
+        self.metrics.append({'name': 'min metrics', 'x': ('work save', min_work_save), 'y': ('recall', min_recall)})
+        self.metrics.append({'name': 'mean metrics', 'x': ('work save', mean_work_save), 'y': ('recall', mean_recall)})
+        return
+
+    @staticmethod
+    def evaluate_configs(configs):
+        metrics = []
+        axs = []
+        for i, metric in enumerate(configs[0].metrics):
+            metrics.append({'name': metric['name'], 'x': (metric['x'][0], []), 'y': (metric['y'][0], [])})
+            for config in configs:
+                metrics[i]['x'][1].append(config.metrics[i]['x'][1])
+                metrics[i]['y'][1].append(config.metrics[i]['y'][1])
+            # ax = visualise_metric(metrics[i])
+            ax = scatter_plot(metrics[i])
+            axs.append(ax)
+        return axs
+
+
+
+
+
+
+
+
+
+
 
 
 def run_model(data, params):
@@ -139,7 +150,7 @@ def run_model(data, params):
 
     # create algorithm objects
     model_AL = params['model'][0](*params['model'][1])
-    selector = params['selector'][0](batch_size, params['confidence'], *params['selector'][1], verbose=params['selector'][2])
+    selector = params['selector'][0](batch_size, *params['selector'][1], verbose=params['selector'][2])
     stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1], verbose=params['stopper'][2])
 
     # specify evaluator object if desired

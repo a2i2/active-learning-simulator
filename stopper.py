@@ -216,7 +216,7 @@ class Statistical(Stopper):
         return
 
     def get_eval_metrics(self):
-        return [{'name': 'p-values', 'x': ('iterations', list(range(len(self.ps)))), 'y': ('p-values', self.ps)}]
+        return [{'name': 'stopper', 'x': ('iterations', list(range(len(self.ps)))), 'y': ('p-values', self.ps)}]
 
     def verbose_output(self):
         """
@@ -290,7 +290,7 @@ class ConsecutiveCount(Stopper):
         return
 
     def get_eval_metrics(self):
-        return [{'name': 'consecutive irrelevant count', 'x': ('iterations', range(len(self.counts))), 'y': ('irrelevant counts', self.counts)}]
+        return [{'name': 'stopper', 'x': ('iterations', list(range(len(self.counts)))), 'y': ('irrelevant counts', self.counts)}]
 
     def verbose_output(self):
         """

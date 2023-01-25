@@ -92,7 +92,7 @@ def run_model(data, params):
 
     # create algorithm objects
     model_AL = params['model'][0](*params['model'][1])
-    selector = params['selector'][0](batch_size, params['confidence'], *params['selector'][1], verbose=params['selector'][2])
+    selector = params['selector'][0](batch_size, *params['selector'][1], verbose=params['selector'][2])
     stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1], verbose=params['stopper'][2])
 
     # specify evaluator object if desired

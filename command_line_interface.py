@@ -43,7 +43,7 @@ def parse_CLI(argument_names):
 def create_simulator_params(config_names, config_args):
     params = []
     for i, config_arg in enumerate(config_args):
-        param = get_params(config_arg[0], config_arg[1], config_arg[2])
+        param = get_params(config_arg[0], config_arg[1], config_arg[2], config_arg[3])
         param['name'] = config_names[i]
         params.append(param)
     return params
@@ -52,12 +52,11 @@ def create_simulator_params(config_names, config_args):
 def create_clustering_params(config_names, config_args):
     params = []
     for i, config_arg in enumerate(config_args):
-        param = get_params(config_arg[0], config_arg[1], config_arg[2])
+        param = get_params(config_arg[0], config_arg[1], config_arg[2], config_arg[3])
         param['name'] = config_names[i]
         params.append(param)
-        param['clusterer'] = get_clustering_params(config_arg[3])
+        param['clusterer'] = get_clustering_params(config_arg[4])
     return params
-
 
 
 def read_config_directory(directory, argument_names):
@@ -143,10 +142,11 @@ def process_config_args(args):
     return result
 
 
-def get_params(data_args, algorithm_args, training_args):
+def get_params(data_args, algorithm_args, training_args, output_args):
     """
     Forms program parameters from arguments, including desired object classes and hyperparameters
 
+    :param output_args:
     :param data_args: name of datasets directory or compressed file
     :param algorithm_args: names of methods and any desired parameters
     :param training_args: parameters for training, evaluator, and verbosity
@@ -198,6 +198,16 @@ def get_params(data_args, algorithm_args, training_args):
     evaluator_verbosity = True
     active_learner_verbosity = 'active_learner' in verbosity_args
 
+    # output specifications
+    working_directory_args = output_args['working path'][0]
+    if working_directory_args == 'None':
+        working_directory_args = "./"
+    output_path_args = output_args['output path'][0]
+    if output_path_args == 'None':
+        output_path_args = working_directory_args
+    output_metrics_args = output_args['output metrics']
+
+
     # compile parameters
     params = {'data': (data_name, data_file_type, data_number),
               'confidence': confidence,
@@ -205,7 +215,10 @@ def get_params(data_args, algorithm_args, training_args):
               'selector': (selector_, selector_params, selector_verbosity),
               'stopper': (stopper_, stopper_params, stopper_verbosity),
               'evaluator': (evaluator_, evaluator_verbosity),
-              'active_learner': (active_learner_, active_learner_verbosity)}
+              'active_learner': (active_learner_, active_learner_verbosity),
+              'working_path': working_directory_args,
+              'output_path': output_path_args,
+              'output_metrics': output_metrics_args}
     return params
 
 

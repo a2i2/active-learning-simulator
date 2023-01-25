@@ -1,11 +1,16 @@
 DATA:
-  - data: data 2
+  - data: datasets
 
 ALGORITHMS:
-  - model: MLP
+  - model: SVC
   - selector: HighestConfidence
-  - stopper: Statistical
+  - stopper: ConsecutiveCount
 
 TRAINING:
-  - confidence: 0.5
+  - confidence: 0.95
   - verbose:
+
+OUTPUT:
+  - working path:
+  - output path:
+  - output metrics: true_recall model_recall

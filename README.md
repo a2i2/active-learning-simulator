@@ -4,34 +4,53 @@ Intended to assist the Living Knowledge project, this simulator performs systema
 
 
 ## Using the simulator
-Ensure compressed data file is present in the working directory and in the correct [format](#compatible-datasets)
+Ensure compressed data file is present in the desired working directory and in the correct [format](#compatible-datasets)
 
 ### Running the program with command line arguments
 Specify the directory containing all configs files to be used.
 
 Example command line instruction:
 ```commandline
->> ./main.py configs_directory
+>> python main.py configs_directory
 ```
 
 ### Config file format
 Keys: 
+
 - DATA
-  - data: specify the name of the datasets
+
+|  name  | description                             | options             | optional parameters              |
+|:------:|-----------------------------------------|---------------------|----------------------------------|
+| `data` | specify the name of the datasets folder | (dataset directory) | (int) number of datasets to test |
+
 - ALGORITHMS: 
-  - model: name of machine learning model, and parameters
-  - selector: name of sample selection algorithm, and parameters
-  - stopper: name of stopping criteria algorithm, and parameters
+
+|    name     | description                                         | options                                                                         | optional parameters                                                                                                                                  |
+|:-----------:|-----------------------------------------------------|---------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   `model`   | name of machine learning model, and parameters      | NB  <br /> LR  <br /> SVC  <br /> MLP  <br /> Ideal                             | sklearn BernoulliNB params  <br /> sklearn LogisticRegression params  <br /> sklearn LinearSVC params  <br /> sklearn MLPClassifier params  <br /> - |
+| `selector`  | name of sample selection algorithm, and parameters  | HighestConfidence  <br /> LowestEntropy <br /> WeightedSample                   | - <br /> - <br /> -                                                                                                                                  |
+|  `stopper`  | name of stopping criteria algorithm, and parameters | SampleProportion  <br /> Statistical  <br /> ConsecutiveCount  <br /> Ensembler | - <br /> (float) alpha  <br /> (float) percent of consecutives <br /> (list) names of stopping algorithms                                            |
+
 - TRAINING:
-  - confidence: level of recall confidence required
-  - verbose: the subsystems to produce a verbose output
-  - evaluator: True of False, store evaluation metrics and visualise detailed results
 
-For the names of currently implemented algorithms, see above command line arguments. Example configuration:
+|     name     | description                                | options                                                                            | optional parameters                  |
+|:------------:|--------------------------------------------|------------------------------------------------------------------------------------|--------------------------------------|
+| `confidence` | level of recall confidence required        | (float)                                                                            | -                                    |
+|  `verbose`   | the subsystems to produce a verbose output | *any number of:* <br /> model <br /> selector <br /> stopper <br /> active_learner | <br />  - <br /> - <br /> - <br /> - |
 
+- OUTPUTS:
+
+|       name       | description                                      | options                                                                                                                                                                                                            | optional parameters                                                              |
+|:----------------:|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+|  `working path`  | working directory, i.e. for input data locations | (directory)                                                                                                                                                                                                        | -                                                                                |
+|  `output path`   | output directory location                        | (directory)                                                                                                                                                                                                        | - <br /> - <br /> -                                                              |
+| `output metrics` | list of metrics names to visualise               | *any number of:* <br /> documents_sampled <br /> relevants_sampled <br /> documents_seen <br /> relevants_seen <br /> true_recall <br /> true_work_save <br /> model_recall <br /> screened_indices <br /> stopper | <br /> - <br /> - <br /> - <br /> - <br /> - <br /> - <br /> - <br /> - <br /> - |
+
+
+### Config examples
 
 ```yaml
-# .yaml
+# .yml
 DATA:
   - data: datasets_directory
 
@@ -43,6 +62,11 @@ ALGORITHMS:
 TRAINING:
   - confidence: 0.95
   - verbose: 
+
+OUTPUT:
+  - working path:
+  - output path:
+  - output metrics: true_recall model_recall stopper
 ```
 
 ```ini
@@ -58,18 +82,45 @@ stopper = Statistical
 [TRAINING]
 confidence = 0.95
 verbose = stopper selector
+
+[OUTPUT]
+working path =
+output path =
+output metrics = documents_seen relevants_seen
 ```
 
 ### Dependecies
 - [Python v3.8.8](https://a2i2.atlassian.net/wiki/spaces/ENG/pages/199196673/Tech+Stack+Installation+Recommendations#Missing)
 - [pip3](https://a2i2.atlassian.net/wiki/spaces/ENG/pages/199196673/Tech+Stack+Installation+Recommendations#Missing)
-- sciPy
-- numPy
-- 
 
 
 ### Implementing algorithms
 To add algorithms for the model, selector, or stopper, refer to class specification sections [below](#al-model-framework). 
+
+
+## Outputs
+### Training metrics
+Metrics stored during training of each dataset
+- documents_sampled: number of documents sampled each iteration
+- relevants_sampled: number of relevant documents sampled each iteration
+- documents_seen: number of total documents seen during training
+- relevants_seen: number of total relevant documents seen during training
+- true_recall: true recall values each iteration of training
+- true_work_save: true work save values each iteration of training
+- model_recall: model prediction recall each iteration of training
+- screened_indices: ordered indices of the documents that were chosen for screening throughout training
+
+### Config metrics
+Metrics for evaluating the performance of a configuration:
+- recall: ratio of relevant documents screened to total relevant documents
+- work save: ratio of un-screened documents to total documents
+
+### Config comparison
+Metrics for comparing configurations
+- mean_recall: average recall for a configuration over all datasets
+- min_recall: worst recall for a configuration over all datasets
+- mean_work_save: average work save for a configuration over all datasets
+- min_work_save:worst work save for a configuration over all datasets
 
 
 
@@ -86,7 +137,7 @@ Currently supported formats:
 
 [Data loading](./data_extraction.py)
 - extracts .csv datasets from compressed .zip
-- can also extract precomputed TF-IDF .pkl datasets
+- can also load precomputed TF-IDF .pkl datasets
 
 
 ### Data preparation
@@ -112,7 +163,6 @@ Each model should include the following methods:
 - train: train model from training data
 - test: test model on testing data and output scores (e.g. probabilities) for both classes *irrelevant* and *relevant*
 - predict: outputs the class predictions for testing data, i.e. *irrelevant* (class 0) or *relevant* (class 1)
-- score: method for outputting evaluation metrics, not strictly required
 - reset: reset model parameters
 
 
@@ -152,3 +202,4 @@ Handles the AL training loops for systematic review labelling. Training involves
 Produces a mask representing the items (indices) in the dataset that were trained, and a mask representing the instances that were found to be relevant.
 
 ### Evaluator
+Stores metrics and facilitates results outputting / visualisations.

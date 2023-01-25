@@ -10,5 +10,10 @@ TRAINING:
   - confidence: 0.9
   - verbose:
 
+OUTPUT:
+  - working path:
+  - output path:
+  - output metrics: true_recall model_recall relevants_seen
+
 CLUSTERING:
   - clusterer: KM 3

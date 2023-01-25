@@ -1,6 +1,5 @@
 import statistics
 from abc import ABC, abstractmethod
-from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.linear_model import LogisticRegression
@@ -9,7 +8,6 @@ from sklearn.neural_network import MLPClassifier
 import pandas as pd
 import numpy as np
 from scipy.stats import lognorm
-
 
 class Model(ABC):
     """
@@ -53,16 +51,6 @@ class Model(ABC):
         pass
 
     @abstractmethod
-    def score(self, test_data):
-        """
-        Evaluates model on testing dataset
-
-        :param test_data: testing dataset containing features 'x' and ground truth labels 'y'
-        :return: evaluation metrics
-        """
-        pass
-
-    @abstractmethod
     def reset(self, **params):
         """
         Reset model parameters
@@ -88,10 +76,6 @@ class NB(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def score(self, test_data):
-        score = self.model.score(test_data['x'].apply(pd.Series), test_data['y'])
-        return score
-
     def reset(self, **params):
         self.model = BernoulliNB(**params)
         return
@@ -112,10 +96,6 @@ class LR(Model):
     def predict(self, test_data):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
-
-    def score(self, test_data):
-        score = self.model.score(test_data['x'].apply(pd.Series), test_data['y'])
-        return score
 
     def reset(self, **params):
         self.model = BernoulliNB(**params)
@@ -139,10 +119,6 @@ class SVC(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def score(self, test_data):
-        score = self.model.score(test_data['x'].apply(pd.Series), test_data['y'])
-        return score
-
     def reset(self, **params):
         self.model = LinearSVC(**params)
         return
@@ -164,10 +140,6 @@ class MLP(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def score(self, test_data):
-        score = self.model.score(test_data['x'].apply(pd.Series), test_data['y'])
-        return score
-
     def reset(self, **params):
         self.model = MLPClassifier(**params)
         return
@@ -188,10 +160,6 @@ class Ideal(Model):
     def predict(self, test_data):
         y_pred = test_data['y']
         return y_pred
-
-    def score(self, test_data):
-        score = None
-        return score
 
     def reset(self, **params):
         return

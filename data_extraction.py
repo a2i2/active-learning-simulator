@@ -1,7 +1,9 @@
+import math
 import re
 import zipfile
 import os
 
+import numpy
 import numpy as np
 import pandas as pd
 from tfidf import compute_TFIDF
@@ -27,7 +29,7 @@ def get_datasets(data_name, data_file_type, working_directory, max_datasets):
         if num_datasets - max_datasets == 0:
             break
         (name, file_type) = process_file_string(data_path)
-        print(name, file_type)
+        print("loaded:", name, file_type)
         # load csv dataset
         if file_type == 'csv':
             data = load_csv_data(working_directory + data_name + '/' + data_path, 'record_id',
@@ -43,12 +45,9 @@ def get_datasets(data_name, data_file_type, working_directory, max_datasets):
             continue
 
         # compute TF-IDF feature representation
-        if data.iloc[0]['x'].__class__ != list:
+        if type(data.iloc[0]['x']) == str or type(data.iloc[0]['x']) == float:
             data = compute_TFIDF(data, 1000)
-        try:
-            a = len(data.iloc[0]['x'])
-        except TypeError:
-            data = compute_TFIDF(data, 1000)
+
         datasets.append(data)
         num_datasets += 1
     return datasets

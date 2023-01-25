@@ -52,9 +52,8 @@ class HighestConfidence(Selector):
     - batch_size: size of each selection / sample
     - p_threshold: confidence level threshold to discriminate valid instances for a sample (unused)
     """
-    def __init__(self, batch_size, p_threshold, verbose=False):
+    def __init__(self, batch_size, verbose=False):
         self.batch_size = batch_size
-        self.p_threshold = p_threshold
         if verbose:
             self.out = self.verbose_output
         else:
@@ -100,9 +99,8 @@ class HighestConfidence(Selector):
 
 
 class LowestEntropy(Selector):
-    def __init__(self, batch_size, p_threshold, verbose=False):
+    def __init__(self, batch_size, verbose=False):
         self.batch_size = batch_size
-        self.p_threshold = p_threshold
         if verbose:
             self.out = self.verbose_output
         else:
@@ -163,45 +161,6 @@ class WeightedSample(Selector):
         # random sample, weight higher confidence predictions more
         sample = np.random.choice(test_indices, self.batch_size, replace=False,
                                   p=(predictions / predictions.sum(axis=0, keepdims=1)))
-        self.out(sample)
-        return sample
-
-    def reset(self):
-        return
-
-    def verbose_output(self, sample):
-        print('Screening ' + str(sample.size) + " instances")
-
-
-# clusterer = AgglomerativeClustering(n_clusters=batch_size)
-# selector = ClusterSelector(clusterer, data['train']['x'].apply(pd.Series), batch_size, p_threshold)
-class Cluster(Selector):
-    def __init__(self, clusterer, data, batch_size, p_threshold, verbose=False):
-        self.p_threshold = p_threshold
-        self.batch_size = batch_size
-        if verbose:
-            self.out = self.verbose_output
-        else:
-            self.out = lambda *a: None
-        self.clusterer = clusterer
-        self.clusters = self.create_clusters(data)
-
-    def create_clusters(self, data):
-        clusters = self.clusterer.fit(data)
-        print(clusters)
-        return clusters.labels_
-
-    def initial_select(self, data, data_indices):
-        return
-
-    def select(self, test_indices, predictions):
-        # simple: take highest confidence ones
-        sample = predictions.argsort()
-        sorted_preds = predictions[sample]
-        # exclude those outside of the threshold
-        sample = sample[sorted_preds >= self.p_threshold]
-        # only take a subset of the sample, get the actual instance indices
-        sample = test_indices[sample[0: min(self.batch_size, sample.size)]]
         self.out(sample)
         return sample
 
