@@ -133,7 +133,7 @@ def output_results(active_learners, output_path, output_metrics=None):
         stopper_metrics = stopper.get_eval_metrics()
         for metric in stopper_metrics:
             metric['name'] = 'stopper'
-            results += metric
+            results.append(metric)
 
         # create dataset output path
         output_dataset_path = "{path}/dataset_{name}/".format(path=output_path, name=(i+1))
