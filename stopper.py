@@ -15,35 +15,60 @@ class Stopper(ABC):
     - initialise: called during the initial sampling of the active learner
     - stopping_criteria: determines if a particular criteria for stopping has been met from the newly selected sample, called each iteration of the AL training
     - reset: resets any parameters and variables
+
+    Attributes:
+
+    - stop: specifics status of stopping criteria: 1 -> stop active learning, 0 -> continue active learning, -1 -> commence random learning
+    - N: number of total documents in the dataset
+    - confidence: confidence level parameter
+    - verbose: specifics level of verbosity, True or False
     """
-    def __init__(self, N, confidence):
+    def __init__(self, N, confidence, verbose=False):
         self.stop = False
         self.N = N
         self.confidence = confidence
+        self.verbose = verbose
         pass
 
     @abstractmethod
     def initialise(self, sample):
+        """
+        Updates the stopper for the initial samples: called each iteration of initial sampling.
+
+        :param sample:
+        :return:
+        """
         pass
 
     @abstractmethod
     def stopping_criteria(self, sample):
         """
-        Returns if the active learning should be terminated, i.e. a stopping criterion has been reached
+        Returns if the active learning should be terminated, i.e. a stopping criterion has been reached or whether
+        random learning should begin instead.
 
         :param sample: newly selected sample to evaluate
-        :return: True if the AL training should be stopped early
+        :return: 1 if the AL training should be stopped early, 0 if AL training should continue, -1 if random training should begin
         """
         stop = False
         return stop
 
     @abstractmethod
     def reset(self):
+        """
+        Resets stopper to initial state.
+
+        :return:
+        """
         self.stop = False
         pass
 
     @abstractmethod
     def get_eval_metrics(self):
+        """
+        Provides metrics specific to the stopper for later visualisation (optional).
+
+        :return:
+        """
         pass
 
 
@@ -61,7 +86,9 @@ class SampleProportion(Stopper):
     - verbose: when true, outputs progress
     """
     def __init__(self, N, tau_target=0.95, verbose=True):
-        super().__init__(N, tau_target)
+        super().__init__(N, tau_target, verbose)
+        self.n_sample = 0
+        self.r_sample = 0
         self.tau_target = tau_target
         self.r_total = 0
         self.r_AL = 0
@@ -73,9 +100,10 @@ class SampleProportion(Stopper):
             self.out = lambda *a: None
 
     def initialise(self, sample):
+        self.n_sample += len(sample)
+        self.r_sample += sum(sample['y'])
         # baseline inclusion rate
-        labels = sample['y']
-        BIR = sum(labels) / len(sample)
+        BIR = self.r_sample / self.n_sample
         # estimate total number of relevants
         self.r_total = BIR * self.N
         self.stopping_criteria(sample)
@@ -89,18 +117,15 @@ class SampleProportion(Stopper):
         return
 
     def reset(self):
+        self.n_sample = 0
+        self.r_sample = 0
         return
 
     def get_eval_metrics(self):
         return []
 
     def verbose_output(self):
-        # recall = 0
-        # if self.r_total != 0:
-        #    recall = self.r_AL / self.r_total
-        # print('Recall:', recall, 'for', self.r_total, 'estimated total relevants')
         print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
-        #time.sleep(1)
         return
 
 
@@ -123,7 +148,7 @@ class Statistical(Stopper):
     - verbose: when true, outputs progress
     """
     def __init__(self, N, tau_target=0.95, alpha=0.95, verbose=False):
-        super().__init__(N, tau_target)
+        super().__init__(N, tau_target, verbose)
         self.tau_target = tau_target
         self.N = N
         self.N_s = self.N
@@ -142,20 +167,10 @@ class Statistical(Stopper):
             self.out = lambda *a: None
 
     def initialise(self, sample):
-        """
-        Initialise the stopper
-        :param sample: sample data to evaluate
-        """
         self.stopping_criteria(sample)
         return
 
     def stopping_criteria(self, sample):
-        """
-        Determines if the active learning should be terminated depending on the calculated p-value.
-
-        :param sample: sample data to evaluate
-        :return: True if AL should cease
-        """
         self.stop = False
         self.k = 0
         # calculate p-value for every addition of sample instances
@@ -180,10 +195,7 @@ class Statistical(Stopper):
         return
 
     def estimate_progress(self):
-        """
-        WIP
-        Estimate the number of documents that should be screened in order to find all relevant documents.
-        """
+        # WIP
         N = self.N_s
         if N == 0:
             self.n_est.append(0)
@@ -201,11 +213,6 @@ class Statistical(Stopper):
         return
 
     def reset(self):
-        """
-        Resets stopper parameters and variables
-
-        :return:
-        """
         self.N_s = self.N
         self.r_AL = 0
         self.k = 0
@@ -219,9 +226,6 @@ class Statistical(Stopper):
         return [{'name': 'stopper', 'x': ('iterations', list(range(len(self.ps)))), 'y': ('p-values', self.ps)}]
 
     def verbose_output(self):
-        """
-        Provides verbose outputting for stopper when enabled.
-        """
         print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
         return
 
@@ -238,9 +242,9 @@ class ConsecutiveCount(Stopper):
     - verbose: when true, outputs progress
     """
     def __init__(self, N, tau_target=0.95, threshold=0.05, verbose=False):
-        super().__init__(N, tau_target)
+        super().__init__(N, tau_target, verbose)
         self.N = N
-        self.threshold = threshold * self.N
+        self.threshold = float(threshold) * self.N
         self.count = 0
         self.counts = []
         self.k = 0
@@ -251,21 +255,10 @@ class ConsecutiveCount(Stopper):
             self.out = lambda *a: None
 
     def initialise(self, sample):
-        """
-        Initialise the stopper
-        :param sample: sample data to evaluate
-        """
         self.count = 0
         return
 
     def stopping_criteria(self, sample):
-        """
-        Determines if the active learning should be terminated depending on the current number of consecutive
-        irrelevant documents seen
-
-        :param sample: sample data to evaluate
-        :return: True if AL should cease
-        """
         self.k = sum(sample['y'])
         self.r_AL += self.k
         self.stop = False
@@ -280,11 +273,6 @@ class ConsecutiveCount(Stopper):
         return
 
     def reset(self):
-        """
-        Resets stopper parameters and variables
-
-        :return:
-        """
         self.count = 0
         self.k = 0
         return
@@ -293,9 +281,6 @@ class ConsecutiveCount(Stopper):
         return [{'name': 'stopper', 'x': ('iterations', list(range(len(self.counts)))), 'y': ('irrelevant counts', self.counts)}]
 
     def verbose_output(self):
-        """
-        Provides verbose outputting for stopper when enabled.
-        """
         print("\r" + 'Number of relevants seen in sample:', str(self.k), 'for a total of', str(self.r_AL), end='')
         return
 
@@ -305,7 +290,7 @@ class Ensembler(Stopper):
 
     """
     def __init__(self, N, tau_target=0.95, *stoppers, verbose=False):
-        super().__init__(N, tau_target)
+        super().__init__(N, tau_target, verbose)
         self.stoppers = []
         for stopper in stoppers:
             self.stoppers.append(globals()[stopper](N, tau_target))
@@ -327,11 +312,6 @@ class Ensembler(Stopper):
         return self.stop
 
     def reset(self):
-        """
-        Resets stopper parameters and variables
-
-        :return:
-        """
         for stopper in self.stoppers:
             stopper.reset()
         return
@@ -343,9 +323,6 @@ class Ensembler(Stopper):
         return metrics
 
     def verbose_output(self):
-        """
-        Provides verbose outputting for stopper when enabled.
-        """
         for stopper in self.stoppers:
             stopper.verbose_output()
         return

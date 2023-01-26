@@ -53,7 +53,7 @@ class Model(ABC):
     @abstractmethod
     def reset(self, **params):
         """
-        Reset model parameters
+        Reset model parameters to their initial state
 
         :param params: arguments for recreation of the model
         """
@@ -61,8 +61,8 @@ class Model(ABC):
 
 
 class NB(Model):
-    def __init__(self, **params):
-        self.model = BernoulliNB(**params)
+    def __init__(self, params=None):
+        self.model = BernoulliNB()
 
     def train(self, train_data):
         self.model.fit(train_data['x'].apply(pd.Series), train_data['y'])
@@ -76,14 +76,14 @@ class NB(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def reset(self, **params):
-        self.model = BernoulliNB(**params)
+    def reset(self, params=None):
+        self.model = BernoulliNB()
         return
 
 
 class LR(Model):
-    def __init__(self, **params):
-        self.model = LogisticRegression(**params)
+    def __init__(self, params=None):
+        self.model = LogisticRegression()
 
     def train(self, train_data):
         self.model.fit(train_data['x'].apply(pd.Series), train_data['y'])
@@ -97,14 +97,14 @@ class LR(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def reset(self, **params):
-        self.model = BernoulliNB(**params)
+    def reset(self, params=None):
+        self.model = LogisticRegression()
         return
 
 
 class SVC(Model):
-    def __init__(self, **params):
-        self.model = LinearSVC(verbose=True, **params)
+    def __init__(self, params=None):
+        self.model = LinearSVC(params)
 
     def train(self, train_data):
         self.model.fit(train_data['x'].apply(pd.Series), train_data['y'])
@@ -119,14 +119,14 @@ class SVC(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def reset(self, **params):
-        self.model = LinearSVC(**params)
+    def reset(self, params=None):
+        self.model = LinearSVC(params)
         return
 
 
 class MLP(Model):
-    def __init__(self, **params):
-        self.model = MLPClassifier(**params)
+    def __init__(self, params=None):
+        self.model = MLPClassifier(params)
 
     def train(self, train_data):
         self.model.fit(train_data['x'].apply(pd.Series), train_data['y'])
@@ -140,13 +140,13 @@ class MLP(Model):
         y_pred = self.model.predict(test_data['x'].apply(pd.Series))
         return y_pred
 
-    def reset(self, **params):
-        self.model = MLPClassifier(**params)
+    def reset(self, params=None):
+        self.model = MLPClassifier(params)
         return
 
 
 class Ideal(Model):
-    def __init__(self, **params):
+    def __init__(self, params=None):
         pass
 
     def train(self, train_data):
@@ -161,5 +161,5 @@ class Ideal(Model):
         y_pred = test_data['y']
         return y_pred
 
-    def reset(self, **params):
+    def reset(self, params=None):
         return

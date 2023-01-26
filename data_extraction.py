@@ -25,7 +25,12 @@ def get_datasets(data_name, data_file_type, working_directory, max_datasets):
     # load each dataset
     datasets = []
     num_datasets = 0
-    for data_path in os.listdir(working_directory + data_name):
+    try:
+        dataset_files = os.listdir(working_directory + data_name)
+    except FileNotFoundError:
+        raise Exception("data not found") from None
+
+    for data_path in dataset_files:
         if num_datasets - max_datasets == 0:
             break
         (name, file_type) = process_file_string(data_path)
@@ -50,7 +55,9 @@ def get_datasets(data_name, data_file_type, working_directory, max_datasets):
 
         datasets.append(data)
         num_datasets += 1
+
     return datasets
+
 
 
 def extract_datasets(datasets_name, dest_path):

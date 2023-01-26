@@ -8,18 +8,8 @@ import warnings
 from data_extraction import process_file_string
 
 
-
-
-
-
-class CLIParser:
-    def __init__(self):
-        pass
-
-
-
-
-
+# TODO more config layers: specify parameters, use names for named arguments!
+# TODO check inputs from config file, handle wrong inputs e.g. no stopper exists
 
 # handle input arguments: specify model name + parameters
 def parse_CLI(argument_names):
@@ -159,28 +149,17 @@ def get_params(data_args, algorithm_args, training_args, output_args):
         data_number = int(data_args['data'][1])
 
     # training hyperparameters
-    confidence = float(training_args['confidence'][0])
+    try:
+        confidence = float(training_args['confidence'][0])
+    except ValueError:
+        raise Exception("confidence must be a decimal value") from None
 
     # machine learning model parameters
-    model_args = algorithm_args['model']
-    model_name = model_args[0]
-    model_params = model_args[1:]
-    model_module = importlib.import_module('model')
-    model_ = getattr(model_module, model_name)
-
+    model_params = get_algorithm_params(algorithm_args, 'model')
     # sample selection method parameters
-    selector_args = algorithm_args['selector']
-    selector_name = selector_args[0]
-    selector_params = selector_args[1:]
-    selector_module = importlib.import_module('selector')
-    selector_ = getattr(selector_module, selector_name)
-
+    selector_params = get_algorithm_params(algorithm_args, 'selector')
     # stopping criteria method parameters
-    stopper_args = algorithm_args['stopper']
-    stopper_name = stopper_args[0]
-    stopper_params = stopper_args[1:]
-    stopper_module = importlib.import_module('stopper')
-    stopper_ = getattr(stopper_module, stopper_name)
+    stopper_params = get_algorithm_params(algorithm_args, 'stopper')
 
     # evaluator, store for training results and metrics
     evaluator_module = importlib.import_module('evaluator')
@@ -207,13 +186,12 @@ def get_params(data_args, algorithm_args, training_args, output_args):
         output_path_args = working_directory_args
     output_metrics_args = output_args['output metrics']
 
-
     # compile parameters
     params = {'data': (data_name, data_file_type, data_number),
               'confidence': confidence,
-              'model': (model_, model_params, model_verbosity),
-              'selector': (selector_, selector_params, selector_verbosity),
-              'stopper': (stopper_, stopper_params, stopper_verbosity),
+              'model': model_params + (model_verbosity,),
+              'selector': selector_params + (selector_verbosity,),
+              'stopper': stopper_params + (stopper_verbosity,),
               'evaluator': (evaluator_, evaluator_verbosity),
               'active_learner': (active_learner_, active_learner_verbosity),
               'working_path': working_directory_args,
@@ -222,8 +200,24 @@ def get_params(data_args, algorithm_args, training_args, output_args):
     return params
 
 
+def get_algorithm_params(algorithm_args, key):
+    # sample selection method parameters
+    args = algorithm_args[key]
+    name = args[0]
+    params = args[1:]
+    module = importlib.import_module(key)
+    try:
+        class_ = getattr(module, name)
+    except AttributeError:
+        raise Exception("{key} could not be found".format(key=key)) from None
+    return class_, params
+
+
 def get_clustering_params(clustering_args):
     clusterer_module = importlib.import_module('clusterer')
-    clusterer_ = getattr(clusterer_module, clustering_args['clusterer'][0])
+    try:
+        clusterer_ = getattr(clusterer_module, clustering_args['clusterer'][0])
+    except AttributeError:
+        raise Exception("clusterer could not be found") from None
     params = (clusterer_, clustering_args['clusterer'][1:])
     return params

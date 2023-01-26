@@ -42,7 +42,7 @@ def main():
         pp.pprint(param)
 
         # make output directory
-        output_directory = param['output_path'] + output_name
+        output_directory = param['output_path'] + "/" + output_name
         if not os.path.isdir(output_directory):
             os.makedirs(output_directory)
 
@@ -124,14 +124,6 @@ class Config:
             ax = scatter_plot(metrics[i])
             axs.append(ax)
         return axs
-
-
-
-
-
-
-
-
 
 
 

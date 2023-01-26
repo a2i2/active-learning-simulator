@@ -212,7 +212,7 @@ def visualise_results(evaluators):
     fig.colorbar(p, ax=ax)
 
     # show and save plot to file
-    plt.show()
+    #plt.show()
     #ax.figure.savefig('recall-work.png', dpi=300)
     return ax
 
@@ -240,7 +240,7 @@ def visualise_configs(work_saves, recalls):
     fig.colorbar(p, ax=ax)
 
     # show and save plot to file
-    plt.show()
+    #plt.show()
     # ax.figure.savefig('recall-work.png', dpi=300)
     return ax
 
@@ -268,7 +268,7 @@ def visualise_metric(metric):
     fig.colorbar(p, ax=ax)
 
     # show and return plot
-    plt.show()
+    #plt.show()
     return ax
 
 

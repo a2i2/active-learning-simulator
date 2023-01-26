@@ -4,10 +4,10 @@ Intended to assist the Living Knowledge project, this simulator performs systema
 
 
 ## Using the simulator
-Ensure compressed data file is present in the desired working directory and in the correct [format](#compatible-datasets)
+Ensure datasets are present in the desired working directory and in the correct [format](#compatible-datasets)
 
 ### Running the program with command line arguments
-Specify the directory containing all configs files to be used.
+Specify the directory / compressed file containing all configs files to be used.
 
 Example command line instruction:
 ```commandline
