@@ -1,12 +1,13 @@
 DATA:
-  - data: datasets
+  - data: datasets 1
 
 ALGORITHMS:
   - model: SVC
   - selector: HighestConfidence
-  - stopper: ConsecutiveCount
+  - stopper: ConsecutiveCount 0.1
 
 TRAINING:
+  - batch proportion: 0.03
   - confidence: 0.95
   - verbose:
 

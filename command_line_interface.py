@@ -9,7 +9,6 @@ from data_extraction import process_file_string
 
 
 # TODO more config layers: specify parameters, use names for named arguments!
-# TODO check inputs from config file, handle wrong inputs e.g. no stopper exists
 
 # handle input arguments: specify model name + parameters
 def parse_CLI(argument_names):
@@ -150,6 +149,11 @@ def get_params(data_args, algorithm_args, training_args, output_args):
 
     # training hyperparameters
     try:
+        batch_proportion = float(training_args['batch proportion'][0])
+    except ValueError:
+        raise Exception("batch proportion must be a decimal value: decimal percentage of total dataset size") from None
+
+    try:
         confidence = float(training_args['confidence'][0])
     except ValueError:
         raise Exception("confidence must be a decimal value") from None
@@ -188,14 +192,15 @@ def get_params(data_args, algorithm_args, training_args, output_args):
 
     # compile parameters
     params = {'data': (data_name, data_file_type, data_number),
+              'batch_proportion': batch_proportion,
               'confidence': confidence,
               'model': model_params + (model_verbosity,),
               'selector': selector_params + (selector_verbosity,),
               'stopper': stopper_params + (stopper_verbosity,),
               'evaluator': (evaluator_, evaluator_verbosity),
               'active_learner': (active_learner_, active_learner_verbosity),
-              'working_path': working_directory_args,
-              'output_path': output_path_args,
+              'working_path': working_directory_args + "/",
+              'output_path': output_path_args + "/",
               'output_metrics': output_metrics_args}
     return params
 

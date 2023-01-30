@@ -88,7 +88,7 @@ def run_model(data, params):
     """
     N = len(data)
     # determine suitable batch size, batch size increases with increases dataset size
-    batch_size = int(0.03 * N)
+    batch_size = int(params['batch_proportion'] * N) + 1
 
     # create algorithm objects
     model_AL = params['model'][0](*params['model'][1])

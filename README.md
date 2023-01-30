@@ -11,7 +11,7 @@ Specify the directory / compressed file containing all configs files to be used.
 
 Example command line instruction:
 ```commandline
->> python main.py configs_directory
+>> python simualte.py configs_directory
 ```
 
 ## Config file keys
@@ -33,10 +33,11 @@ Example command line instruction:
 ---
 ### *```TRAINING:```*
 
-|     name     | description                                | options                                                                            | optional parameters                  |
-|:------------:|--------------------------------------------|------------------------------------------------------------------------------------|--------------------------------------|
-| `confidence` | level of recall confidence required        | (float)                                                                            | -                                    |
-|  `verbose`   | the subsystems to produce a verbose output | *any number of:* <br /> model <br /> selector <br /> stopper <br /> active_learner | <br />  - <br /> - <br /> - <br /> - |
+|        name        | description                                           | options                                                                            | optional parameters                  |
+|:------------------:|-------------------------------------------------------|------------------------------------------------------------------------------------|--------------------------------------|
+| `batch proportion` | decimal percentage of the dataset to sample at a time | (float)                                                                            | -                                    |
+|    `confidence`    | level of recall confidence required                   | (float)                                                                            | -                                    |
+|     `verbose`      | the subsystems to produce a verbose output            | *any number of:* <br /> model <br /> selector <br /> stopper <br /> active_learner | <br />  - <br /> - <br /> - <br /> - |
 ---
 ### *```OUTPUTS:```*
 
@@ -60,12 +61,13 @@ ALGORITHMS:
   - stopper: SampleProportion
 
 TRAINING:
+  - batch proportion: 0.03
   - confidence: 0.95
   - verbose: 
 
 OUTPUT:
-  - working path:
-  - output path:
+  - working path: demo_directory
+  - output path: demo_directory/demo_outputs
   - output metrics: true_recall model_recall stopper
 ```
 
@@ -80,6 +82,7 @@ selector = HighestConfidence
 stopper = Statistical
 
 [TRAINING]
+batch proportion = 0.03
 confidence = 0.95
 verbose = stopper selector
 
@@ -89,7 +92,7 @@ output path =
 output metrics = documents_seen relevants_seen
 ```
 
-## Dependecies
+## Dependencies
 - [Python v3.8.8](https://a2i2.atlassian.net/wiki/spaces/ENG/pages/199196673/Tech+Stack+Installation+Recommendations#Missing)
 - [pip3](https://a2i2.atlassian.net/wiki/spaces/ENG/pages/199196673/Tech+Stack+Installation+Recommendations#Missing)
 - numpy

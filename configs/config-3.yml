@@ -1,12 +1,13 @@
 DATA:
-  - data: datasets
+  - data: datasets 1
 
 ALGORITHMS:
   - model: LR
   - selector: HighestConfidence
-  - stopper: Statistical
+  - stopper: SampleProportion
 
 TRAINING:
+  - batch proportion: 0.03
   - confidence: 0.95
   - verbose:
 

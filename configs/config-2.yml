@@ -1,5 +1,5 @@
 DATA:
-  - data: datasets
+  - data: datasets 1
 
 ALGORITHMS:
   - model: SVC
@@ -7,6 +7,7 @@ ALGORITHMS:
   - stopper: Statistical
 
 TRAINING:
+  - batch proportion: 0.03
   - confidence: 0.95
   - verbose:
 

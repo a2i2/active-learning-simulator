@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import os
 import pprint
 import ssl
@@ -13,10 +14,10 @@ from datetime import datetime
 from operator import attrgetter
 
 working_directory = './'
-#TODO add 95% recall line to plots
+# TODO add 95% recall line to plots
 
 
-def main():
+def simulate():
     try:
         _create_unverified_https_context = ssl._create_unverified_context
     except AttributeError:
@@ -126,8 +127,6 @@ class Config:
         return axs
 
 
-
-
 def run_model(data, params):
     """
     Creates algorithm objects and runs the active learning program
@@ -137,7 +136,7 @@ def run_model(data, params):
     """
     N = len(data['train'])
     # determine suitable batch size, batch size increases with increases dataset size
-    batch_size = int(0.03 * N)
+    batch_size = int(params['batch_proportion'] * N) + 1
     # TODO different batch sizes? as a parameter
 
     # create algorithm objects
@@ -158,11 +157,10 @@ def run_model(data, params):
     return active_learner
 
 
-
 def save_output_text(string, output_path, file_name):
     with open("{path}/{name}".format(path=output_path, name=file_name), 'w') as f:
         f.write(string)
 
 
 if __name__ == '__main__':
-    main()
+    simulate()

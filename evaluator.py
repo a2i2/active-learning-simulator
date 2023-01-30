@@ -16,9 +16,11 @@ class Evaluator:
         self.recall = [0]  # actual recall during training
         self.N_AL = [0]  # total number of documents seen during training
         self.k = [0]  # number of relevants sampled during training
+
         self.work_save = [0.0]  # actual work save during training
         self.tau_model = [0.0]  # recall of the ML model during training
-        self.screen_indices = [] # indices of the screened instances in order of screening
+        self.screen_indices = []  # indices of the screened instances in order of screening
+
         if verbose:
             self.out = self.output_results
         else:
@@ -54,7 +56,7 @@ class Evaluator:
         self.recall.append(self.r_AL[-1] / self.r_total)
         self.N_AL.append(self.N_AL[-1] + self.n[-1])
         self.work_save.append(1 - self.N_AL[-1] / self.N)
-        preds = model.predict(test_data)
+        preds = model.predict(test_data['x'].apply(pd.Series), test_data['y'])
         self.tau_model.append(sum(test_data['y'] * preds) / self.r_total)
         self.screen_indices += list(sample.index.values)
         return
@@ -80,7 +82,7 @@ class Evaluator:
         :param test_data: testing data (full dataset)
         :return:
         """
-        preds = model.predict(test_data)
+        preds = model.predict(test_data['x'].apply(pd.Series), test_data['y'])
         output_string = ''
         output_string += '\nRecall: {0}'.format(self.recall[-1])
         output_string += '\nWork save: {0}'.format(self.work_save[-1])
@@ -107,6 +109,8 @@ def output_results(active_learners, output_path, output_metrics=None):
     for i, AL in enumerate(active_learners):
         results = []
         evaluator = AL.evaluator
+        model = AL.model
+        selector = AL.selector
         stopper = AL.stopper
 
         results.append(
@@ -129,11 +133,26 @@ def output_results(active_learners, output_path, output_metrics=None):
         results.append(
             {'name': 'screened_indices', 'x': ('iterations', list(range(len(evaluator.screen_indices)))), 'y': ('indices', list(map(int, evaluator.screen_indices)))})
 
+        # model metrics
+        model_metrics = model.get_eval_metrics()
+        if model_metrics:
+            for metric in model_metrics:
+                metric['name'] = 'model'
+                results.append(metric)
+
+        # selector metrics
+        selector_metrics = selector.get_eval_metrics()
+        if selector_metrics:
+            for metric in selector_metrics:
+                metric['name'] = 'selector'
+                results.append(metric)
+
         # stopper metrics
         stopper_metrics = stopper.get_eval_metrics()
-        for metric in stopper_metrics:
-            metric['name'] = 'stopper'
-            results.append(metric)
+        if stopper_metrics:
+            for metric in stopper_metrics:
+                metric['name'] = 'stopper'
+                results.append(metric)
 
         # create dataset output path
         output_dataset_path = "{path}/dataset_{name}/".format(path=output_path, name=(i+1))
@@ -272,7 +291,6 @@ def visualise_metric(metric):
     return ax
 
 
-
 def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     """
     Plots scatter plot with histograms showing distributions
@@ -316,7 +334,6 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     return p
 
 
-
 def scatter_plot(metric, colour_label="index", marginal=True):
     title = metric['name']
     marginals = ""
@@ -346,20 +363,5 @@ def metric_plot(metric):
 
     # static plot
     # ax = fig.add_gridspec(top=0.75, right=0.75).subplots()
-    ax = df.plot(kind='line', x=x_label, y=y_label)
+    ax = df.plot(kind='line', x=x_label, y=y_label, title=title)
     return ax
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

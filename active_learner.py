@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 
@@ -139,8 +140,8 @@ class ActiveLearner:
             test_data = self.data.iloc[test_indices]
 
             # train and test model
-            self.model.train(train_data)
-            preds = self.model.test(test_data)  # note: -model.test(test_data)[:, 1] ??
+            self.model.train(train_data['x'].apply(pd.Series), train_data['y'])
+            preds = self.model.test(test_data['x'].apply(pd.Series), test_data['y'])  # note: -model.test(test_data)[:, 1] ??
 
             # screen test instances
             sample_indices = self.selector.select(test_indices, preds)
@@ -166,8 +167,8 @@ class ActiveLearner:
 
         # final model
         train_data = self.data.iloc[train_indices]
-        self.model.train(train_data)
-        self.model.test(self.data)
+        self.model.train(train_data['x'].apply(pd.Series), train_data['y'])
+        self.model.test(self.data['x'].apply(pd.Series), self.data['y'])
         self.end_progress(self)
         return
 
