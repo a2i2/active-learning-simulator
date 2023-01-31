@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 
 class ActiveLearner:
-    def __init__(self, model, selector, stopper, batch_size=10, max_iter=100, evaluator=None, verbose=True):
+    def __init__(self, model, selector, stopper, batch_size=10, max_iter=100, evaluator=None, verbose=False):
         self.relevant_mask = None
         self.indice_mask = None
         self.N = None
@@ -38,22 +38,14 @@ class ActiveLearner:
 
             def initialise_evaluator(sample, test_data):
                 evaluator.initialise(sample, test_data)
-
             self.initialise_evaluator = initialise_evaluator
 
             def update_evaluator(m, sample, test_data):
                 evaluator.update(m, sample, test_data)
-
             self.update_evaluator = update_evaluator
-
-            def reset_evaluator():
-                evaluator.reset()
-
-            self.reset_evaluator = reset_evaluator
         else:
             self.initialise_evaluator = lambda *a: None
             self.update_evaluator = lambda *a: None
-            self.reset_evaluator = lambda *a: None
 
     # train (and test) active learner
     def train(self, data):
@@ -63,12 +55,9 @@ class ActiveLearner:
         :param data: training dataset DataFrame
         :return:
         """
-        self.reset()
         self.initialise(data)
         self.initial_sampling()
         self.active_learn()
-        # self.random_learn()
-        return self.indice_mask, self.relevant_mask
 
     # initialise active learner parameters
     def initialise(self, data):
@@ -170,7 +159,6 @@ class ActiveLearner:
         self.model.train(train_data['x'].apply(pd.Series), train_data['y'])
         self.model.test(self.data['x'].apply(pd.Series), self.data['y'])
         self.end_progress(self)
-        return
 
     # random learning loop
     def random_learn(self):
@@ -209,14 +197,3 @@ class ActiveLearner:
 
         # final
         self.end_progress(self)
-        return
-
-    def reset(self):
-        """
-        Reset active learner and enclosed structures
-        """
-        self.model.reset()
-        self.selector.reset()
-        self.stopper.reset()
-        self.reset_evaluator()
-        return

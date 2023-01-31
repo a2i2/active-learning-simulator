@@ -45,12 +45,9 @@ def main():
 
     # set up output directory
     output_name = str(datetime.now())
-    output_directory = working_directory + output_name
-    if not os.path.isdir(output_directory):
-        os.makedirs(output_directory)
 
     # get desired parameters for training
-    arg_names, args = parse_CLI(["DATA", "ALGORITHMS", "TRAINING", "CLUSTERING"])
+    arg_names, args = parse_CLI(["DATA", "MODEL", "SELECTOR", "STOPPER", "TRAINING", "OUTPUT", "CLUSTERING"])
     params = create_clustering_params(arg_names, args)
     pp = pprint.PrettyPrinter()
     print()
@@ -58,13 +55,23 @@ def main():
     print()
 
     for i, param in enumerate(params):
+        # make output directory
+        output_directory = param['output_path'] + "/" + output_name
+        if not os.path.isdir(output_directory):
+            os.makedirs(output_directory)
+
+        # make folder for each config
+        output_path = output_directory + '/' + param['name']
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
+
         # set randomisation seed
         np.random.seed(0)
         # get datasets
         datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
         n = 3
         for j, data in enumerate(datasets):
-            output_path = "{path}/{config}_data_{data}.mp4".format(path=output_directory, config=param['name'], data=j)
+            output_path = "{path}/{config}_data_{data}.mp4".format(path=output_path, config=param['name'], data=j)
             visualise_clustering(n, data, param, output_path)
 
 
@@ -105,7 +112,7 @@ def run_model(data, params):
                                    evaluator=evaluator, verbose=params['active_learner'][1])
 
     # train active learner
-    (mask, relevant_mask) = active_learner.train(data)
+    active_learner.train(data)
     return active_learner
 
 

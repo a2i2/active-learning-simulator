@@ -1,10 +1,11 @@
 import argparse
 import importlib
+import importlib.util
 import os
-from configparser import ConfigParser
 import yaml
 import warnings
 
+from config import read_config_directory
 from data_extraction import process_file_string
 
 
@@ -14,7 +15,7 @@ from data_extraction import process_file_string
 def parse_CLI(argument_names):
     """
     Parses command line arguments into program parameters and algorithms
-    :return: parameters for the program, model selector stopper evaluator etc.
+    :return: parameters for the program, model selector_algorithms stopper evaluator etc.
     """
     # add optional arguments to look for
     parser = argparse.ArgumentParser()
@@ -32,7 +33,7 @@ def parse_CLI(argument_names):
 def create_simulator_params(config_names, config_args):
     params = []
     for i, config_arg in enumerate(config_args):
-        param = get_params(config_arg[0], config_arg[1], config_arg[2], config_arg[3])
+        param = get_params(config_arg[0], config_arg[1:4], config_arg[4], config_arg[5])
         param['name'] = config_names[i]
         params.append(param)
     return params
@@ -41,95 +42,11 @@ def create_simulator_params(config_names, config_args):
 def create_clustering_params(config_names, config_args):
     params = []
     for i, config_arg in enumerate(config_args):
-        param = get_params(config_arg[0], config_arg[1], config_arg[2], config_arg[3])
+        param = get_params(config_arg[0], config_arg[1:4], config_arg[4], config_arg[5])
         param['name'] = config_names[i]
         params.append(param)
-        param['clusterer'] = get_clustering_params(config_arg[4])
+        param['clusterer'] = get_clustering_params(config_arg[6])
     return params
-
-
-def read_config_directory(directory, argument_names):
-    config_names = []
-    config_args = []
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            config_name, config_file_type = process_file_string(filename)
-            args = read_config(f, config_name, config_file_type, argument_names)
-            if args:
-                config_args.append(args)
-                config_names.append(config_name)
-        else:
-            continue
-    return config_names, config_args
-
-
-def read_config(config_file, config_name, config_type, argument_names):
-    args = None
-    if config_type == 'yml':
-        args = read_yml(config_file, argument_names)
-    elif config_type == 'ini':
-        args = read_ini(config_file, argument_names)
-    else:
-        warnings.warn("Config file {config} is not supported".format(config=config_name))
-    return args
-
-
-def read_yml(config_file, argument_names):
-    """
-    Reads a yaml configuration file and provides the relevant simulation parameters
-    :param argument_names:
-    :param config_file: file path of the configuration file
-    :return: data, algorithm, and training parameters
-    """
-    with open(config_file, 'r') as f:
-        config_object = yaml.load(f, Loader=yaml.FullLoader)
-    args = []
-    for arg_name in argument_names:
-        args.append(process_config_args(combine_dict_list(config_object[arg_name])))
-    return args
-
-
-def combine_dict_list(dlist):
-    """
-    Helper function for parsing yaml files. Combines list into single dictionary
-    :param dlist: list of dictionaries
-    :return: single flattened dictionary
-    """
-    result = {}
-    for d in dlist:
-        result.update(d)
-    return result
-
-
-def read_ini(config_file, argument_names):
-    """
-    Reads an ini configuration file and provides the relevant simulation parameters
-    :param argument_names:
-    :param config_file: file path of the configuration file
-    :return: data, algorithm, and training parameters
-    """
-    config_object = ConfigParser()
-    config_object.read(config_file)
-    args = []
-    for arg_name in argument_names:
-        args.append(process_config_args(config_object[arg_name]))
-    return args
-
-
-def process_config_args(args):
-    """
-    Split argument string in list
-
-    :param args
-    :return: list of separate arguments
-    """
-    result = {}
-    for key, val in args.items():
-        result[key] = str(val).split(' ')
-    return result
-
 
 def get_params(data_args, algorithm_args, training_args, output_args):
     """
@@ -159,11 +76,11 @@ def get_params(data_args, algorithm_args, training_args, output_args):
         raise Exception("confidence must be a decimal value") from None
 
     # machine learning model parameters
-    model_params = get_algorithm_params(algorithm_args, 'model')
+    model_params = get_algorithm_params_file(algorithm_args[0], 'model')
     # sample selection method parameters
-    selector_params = get_algorithm_params(algorithm_args, 'selector')
+    selector_params = get_algorithm_params_file(algorithm_args[1], 'selector')
     # stopping criteria method parameters
-    stopper_params = get_algorithm_params(algorithm_args, 'stopper')
+    stopper_params = get_algorithm_params_file(algorithm_args[2], 'stopper')
 
     # evaluator, store for training results and metrics
     evaluator_module = importlib.import_module('evaluator')
@@ -182,12 +99,9 @@ def get_params(data_args, algorithm_args, training_args, output_args):
     active_learner_verbosity = 'active_learner' in verbosity_args
 
     # output specifications
-    working_directory_args = output_args['working path'][0]
-    if working_directory_args == 'None':
-        working_directory_args = "./"
     output_path_args = output_args['output path'][0]
     if output_path_args == 'None':
-        output_path_args = working_directory_args
+        output_path_args = "./"
     output_metrics_args = output_args['output metrics']
 
     # compile parameters
@@ -199,7 +113,6 @@ def get_params(data_args, algorithm_args, training_args, output_args):
               'stopper': stopper_params + (stopper_verbosity,),
               'evaluator': (evaluator_, evaluator_verbosity),
               'active_learner': (active_learner_, active_learner_verbosity),
-              'working_path': working_directory_args + "/",
               'output_path': output_path_args + "/",
               'output_metrics': output_metrics_args}
     return params
@@ -215,6 +128,22 @@ def get_algorithm_params(algorithm_args, key):
         class_ = getattr(module, name)
     except AttributeError:
         raise Exception("{key} could not be found".format(key=key)) from None
+    return class_, params
+
+
+def get_algorithm_params_file(args, key):
+    # sample selection method parameters
+    module_name = args['module'][0]
+    class_name = args['class'][0]
+    params = args['parameters']
+    if params == ['None'] or params == ['null']:
+        params = []
+
+    module = importlib.import_module(module_name)
+    try:
+        class_ = getattr(module, class_name)
+    except AttributeError:
+        raise Exception("{key} could not be found: {name}".format(key=key, name=class_name)) from None
     return class_, params
 
 

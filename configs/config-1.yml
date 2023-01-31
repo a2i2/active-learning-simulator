@@ -1,17 +1,27 @@
 DATA:
-  - data: datasets 1
+  - data: data 1
+  - feature extraction: work in progress?
 
-ALGORITHMS:
-  - model: SVC
-  - selector: HighestConfidence
-  - stopper: ConsecutiveCount 0.1
+MODEL:
+  - module: model_algorithms.NB
+  - class: NB
+  - parameters:
+
+SELECTOR:
+  - module: selector_algorithms.highest_confidence
+  - class: HighestConfidence
+  - parameters:
+
+STOPPER:
+  - module: stopper_algorithms.statistical
+  - class: Statistical
+  - parameters:
 
 TRAINING:
   - batch proportion: 0.03
-  - confidence: 0.95
-  - verbose:
+  - confidence: 0.4
+  - verbose: selector_algorithms stopper
 
 OUTPUT:
-  - working path:
-  - output path:
-  - output metrics: true_recall model_recall
+  - output path: demo/demo_ouputs
+  - output metrics: true_recall model_recall stopper selector model

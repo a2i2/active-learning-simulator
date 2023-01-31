@@ -141,7 +141,7 @@ def remove_misc(text):
     :return: new text without undesired articles
     """
     new_text = re.sub('@[^\s]+', '', text)
-    new_text = re.sub('((www.[^s]+)|(https?://[^s]+))', '', new_text)
+    new_text = re.sub('((www.[^selector_algorithms]+)|(https?://[^selector_algorithms]+))', '', new_text)
     new_text = re.sub('[0-9]+', '', new_text)
     return new_text
 

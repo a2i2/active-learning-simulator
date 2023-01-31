@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import pprint
 import ssl
 
@@ -8,10 +7,7 @@ from active_learner import ActiveLearner
 from command_line_interface import parse_CLI, create_simulator_params
 from data_extraction import get_datasets
 from evaluator import *
-from stopper import *
 from datetime import datetime
-
-from operator import attrgetter
 
 working_directory = './'
 # TODO add 95% recall line to plots
@@ -32,7 +28,8 @@ def simulate():
     pp = pprint.PrettyPrinter()
 
     # get desired parameters for training
-    arg_names, args = parse_CLI(["DATA", "ALGORITHMS", "TRAINING", "OUTPUT"])
+    arg_names, args = parse_CLI(["DATA", "MODEL", "SELECTOR", "STOPPER", "TRAINING", "OUTPUT"])
+
     params = create_simulator_params(arg_names, args)
 
     configs = []
@@ -53,7 +50,7 @@ def simulate():
             os.makedirs(output_path)
 
         # get datasets to train the program on
-        datasets = get_datasets(param['data'][0], param['data'][1], param['working_path'], param['data'][2])
+        datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
 
         # store program objects for later evaluation
         active_learners = []
@@ -141,7 +138,9 @@ def run_model(data, params):
 
     # create algorithm objects
     model_AL = params['model'][0](*params['model'][1])
+
     selector = params['selector'][0](batch_size, *params['selector'][1], verbose=params['selector'][2])
+
     stopper = params['stopper'][0](N, params['confidence'], *params['stopper'][1], verbose=params['stopper'][2])
 
     # specify evaluator object if desired
@@ -152,7 +151,7 @@ def run_model(data, params):
                                    evaluator=evaluator, verbose=params['active_learner'][1])
 
     # train active learner
-    (mask, relevant_mask) = active_learner.train(data['train'])
+    active_learner.train(data['train'])
 
     return active_learner
 

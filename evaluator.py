@@ -61,20 +61,6 @@ class Evaluator:
         self.screen_indices += list(sample.index.values)
         return
 
-    def reset(self):
-        """
-        Reset evaluator statistics and parameters
-        """
-        self.n = [0]
-        self.r_AL = [0]
-        self.recall = [0]
-        self.N_AL = [0]
-        self.k = [0]
-        self.work_save = [0]
-        self.tau_model = [0]
-        self.screen_indices = []
-        return
-
     def output_results(self, model, test_data):
         """
         Print results to console.
@@ -140,11 +126,11 @@ def output_results(active_learners, output_path, output_metrics=None):
                 metric['name'] = 'model'
                 results.append(metric)
 
-        # selector metrics
+        # selector_algorithms metrics
         selector_metrics = selector.get_eval_metrics()
         if selector_metrics:
             for metric in selector_metrics:
-                metric['name'] = 'selector'
+                metric['name'] = 'selector_algorithms'
                 results.append(metric)
 
         # stopper metrics

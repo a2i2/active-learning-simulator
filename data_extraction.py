@@ -9,6 +9,8 @@ import pandas as pd
 from tfidf import compute_TFIDF
 
 
+# TODO: dont feature extract when dataset available. Feature extract save to directory for data
+
 def get_datasets(data_name, data_file_type, working_directory, max_datasets):
     """
     Get data from different formats and file types. Loads from .zip, directory with csv datas, directory with pkl datas
