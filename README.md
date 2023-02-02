@@ -48,7 +48,7 @@ Parameters that adjust the training performance or verbosity.
 |    `confidence`    | level of recall confidence required                   | (float)                                                                            |
 |     `verbose`      | the subsystems to produce a verbose output            | *any number of:* <br /> model <br /> selector <br /> stopper <br /> active_learner |
 ---
-### *```OUTPUTS:```*
+### *```OUTPUT:```*
 Output location and metric specifications.
 
 |       name       | description                                      | options                                                                                                                                                                                                                                         |

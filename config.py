@@ -15,7 +15,7 @@ from data_extraction import process_file_string
 def create_configs_combinations():
     # create options
     # data format: "data_directory num_datasets_to_screen"
-    data = [["data 1"]]
+    data = [["datasets"]]
 
     # model format: ("module_name", "class_name")
     model = [("model_algorithms.NB", "NB"),
@@ -34,12 +34,12 @@ def create_configs_combinations():
     # batch_proportions format: list of floats between 0 and 1 (not inclusive)
     batch_proportions = list(np.linspace(0.01, 0.05, 10))
     # confidence format: list of floats between 0 and 1 (not inclusive)
-    confidence = list(np.linspace(0.75, 0.95, 10))
+    confidence = list(np.linspace(0.8, 0.99, 10))
     # verbosity format: list objects to enable verbosity for (see documentation for available verbosity)
     verbosity = [("selector stopper")]
 
     # output format: ("output_path", "desired metrics separated by spaces")
-    output = [("demo/demo_outputs", "true_recall model_recall stopper selector model")]
+    output = [("outputs", "true_recall model_recall stopper selector model")]
 
     # combine training parameters: cycle the smallest list of parameters
     training = list(zip(batch_proportions, confidence, cycle(verbosity)))
@@ -57,7 +57,7 @@ def create_configs_combinations():
 
     # restrict options to whatever is desired
     data = data[:]
-    model = model[0:3]
+    model = model[:]
     selector = selector[0:1]
     stopper = stopper[:]
     training = training[:]

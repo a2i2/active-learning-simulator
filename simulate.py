@@ -34,9 +34,9 @@ def simulate():
 
     configs = []
     # for each configuration
-    for param in params:
+    for k, param in enumerate(params):
         print()
-        print()
+        print("Executing config {name}, {k}/{n}".format(name=param['name'], k=k+1, n=len(params)))
         pp.pprint(param)
 
         # make output directory
