@@ -8,6 +8,20 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 import pandas as pd
 
+from feature_extraction import FeatureExtractor
+
+
+class TFIDF(FeatureExtractor):
+    """
+    Computes TFIDF feature extraction for a pandas dataset
+    """
+    def __init__(self, num_features=1000):
+        self.num_features = int(num_features)
+        pass
+
+    def extract_features(self, data):
+        return compute_TFIDF(data, self.num_features)
+
 
 def prep_raw_data(data):
     """
@@ -154,7 +168,7 @@ def stemming(text):
     """
     stemmer = nltk.PorterStemmer()
     stemmed = [stemmer.stem(word) for word in text]
-    return stemmed # text
+    return stemmed  # text
 
 
 def lemmatizer(text):
@@ -165,7 +179,7 @@ def lemmatizer(text):
     """
     lemmatizer = nltk.WordNetLemmatizer()
     lemmatized = [lemmatizer.lemmatize(word) for word in text]
-    return lemmatized # text
+    return lemmatized  # text
 
 
 def compute_TFIDF(data, max_features):

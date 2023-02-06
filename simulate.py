@@ -28,7 +28,7 @@ def simulate():
     pp = pprint.PrettyPrinter()
 
     # get desired parameters for training
-    arg_names, args = parse_CLI(["DATA", "MODEL", "SELECTOR", "STOPPER", "TRAINING", "OUTPUT"])
+    arg_names, args = parse_CLI(["DATA", "FEATURE EXTRACTION", "MODEL", "SELECTOR", "STOPPER", "TRAINING", "OUTPUT"])
 
     params = create_simulator_params(arg_names, args)
 
@@ -40,17 +40,19 @@ def simulate():
         pp.pprint(param)
 
         # make output directory
-        output_directory = param['output_path'] + "/" + output_name
+        output_directory = os.path.join(param['output_path'], output_name)
         if not os.path.isdir(output_directory):
             os.makedirs(output_directory)
 
         # make folder for each config
-        output_path = output_directory + '/' + param['name']
+        output_path = os.path.join(output_directory, param['name'])
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
 
         # get datasets to train the program on
-        datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
+        datasets = get_datasets(*param['data'], output_directory, param['feature_extraction'])
+        if len(datasets) == 0:
+            continue
 
         # store program objects for later evaluation
         active_learners = []
@@ -79,11 +81,12 @@ def simulate():
         configs.append(config)
 
     # plot config comparison results
-    axs = Config.evaluate_configs(configs)
-    for i, ax in enumerate(axs):
-        # ax.figure.savefig("{path}/{fig_name}.png".format(path=output_directory, fig_name=configs[0].metrics[i]['name']), dpi=300)
-        # ax.write_image("{path}/{fig_name}.png".format(path=output_directory, fig_name=configs[0].metrics[i]['name']))
-        ax.write_html("{path}/{fig_name}.html".format(path=output_directory, fig_name=configs[0].metrics[i]['name']))
+    if len(configs) > 0:
+        axs = Config.evaluate_configs(configs)
+        for i, ax in enumerate(axs):
+            # ax.figure.savefig("{path}/{fig_name}.png".format(path=output_directory, fig_name=configs[0].metrics[i]['name']), dpi=300)
+            # ax.write_image("{path}/{fig_name}.png".format(path=output_directory, fig_name=configs[0].metrics[i]['name']))
+            ax.write_html("{path}/{fig_name}.html".format(path=output_directory, fig_name=configs[0].metrics[i]['name']))
 
 
 class Config:
@@ -157,7 +160,7 @@ def run_model(data, params):
 
 
 def save_output_text(string, output_path, file_name):
-    with open("{path}/{name}".format(path=output_path, name=file_name), 'w') as f:
+    with open(os.path.join(output_path, file_name), 'w') as f:
         f.write(string)
 
 

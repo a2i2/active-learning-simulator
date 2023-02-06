@@ -320,7 +320,7 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     return p
 
 
-def scatter_plot(metric, colour_label="index", marginal=True):
+def scatter_plot(metric, colour_label="index", marginal=True, text=None):
     title = metric['name']
     marginals = ""
     if marginal:
@@ -332,7 +332,7 @@ def scatter_plot(metric, colour_label="index", marginal=True):
     df = pd.DataFrame({x_label: metric['x'][1], y_label: metric['y'][1]})
     df = df.reset_index(level=0)
 
-    fig = px.scatter(df, x=x_label, y=y_label, marginal_x=marginals, marginal_y=marginals, title=title, color=colour_label)
+    fig = px.scatter(df, x=x_label, y=y_label, marginal_x=marginals, marginal_y=marginals, title=title, color=colour_label, hover_name=text)
     #fig.update_traces(textposition='top center')
     return fig
 

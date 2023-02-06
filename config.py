@@ -9,7 +9,7 @@ from itertools import cycle
 import numpy as np
 import yaml
 
-from data_extraction import process_file_string
+from data_extraction import process_file_path
 
 
 def create_configs_combinations():
@@ -17,26 +17,28 @@ def create_configs_combinations():
     # data format: "data_directory num_datasets_to_screen"
     data = [["datasets"]]
 
+    feature_extraction = [("tfidf", "TFIDF", 10000)]
+
     # model format: ("module_name", "class_name")
-    model = [("model_algorithms.NB", "NB"),
-             ("model_algorithms.LR", "LR"),
-             ("model_algorithms.SVC", "SVC"),
-             ("model_algorithms.MLP", "MLP")]
+    model = [("model_algorithms.NB", "NB", None),
+             ("model_algorithms.LR", "LR", None),
+             ("model_algorithms.SVC", "SVC", None),
+             ("model_algorithms.MLP", "MLP", None)]
     # selector format: ("module_name", "class_name")
-    selector = [("selector_algorithms.highest_confidence", "HighestConfidence"),
-                ("selector_algorithms.lowest_entropy", "LowestEntropy"),
-                ("selector_algorithms.weighted_sample", "WeightedSample")]
+    selector = [("selector_algorithms.highest_confidence", "HighestConfidence", None),
+                ("selector_algorithms.lowest_entropy", "LowestEntropy", None),
+                ("selector_algorithms.weighted_sample", "WeightedSample", None)]
     # stopper format: ("module_name", "class_name")
-    stopper = [("stopper_algorithms.consecutive_count", "ConsecutiveCount"),
-               ("stopper_algorithms.sample_proportion", "SampleProportion"),
-               ("stopper_algorithms.statistical", "Statistical")]
+    stopper = [("stopper_algorithms.consecutive_count", "ConsecutiveCount", None),
+               ("stopper_algorithms.sample_proportion", "SampleProportion", None),
+               ("stopper_algorithms.statistical", "Statistical", None)]
 
     # batch_proportions format: list of floats between 0 and 1 (not inclusive)
     batch_proportions = list(np.linspace(0.01, 0.05, 10))
     # confidence format: list of floats between 0 and 1 (not inclusive)
     confidence = list(np.linspace(0.8, 0.99, 10))
     # verbosity format: list objects to enable verbosity for (see documentation for available verbosity)
-    verbosity = [("selector stopper")]
+    verbosity = [(None)]
 
     # output format: ("output_path", "desired metrics separated by spaces")
     output = [("outputs", "true_recall model_recall stopper selector model")]
@@ -46,7 +48,7 @@ def create_configs_combinations():
 
     # parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-directory', help='Name of the config file directory',
+    parser.add_argument('directory', help='Name of the config file directory',
                         default='./configs_generated')
     args = parser.parse_args()
 
@@ -57,6 +59,7 @@ def create_configs_combinations():
 
     # restrict options to whatever is desired
     data = data[:]
+    feature_extraction = feature_extraction[:]
     model = model[:]
     selector = selector[0:1]
     stopper = stopper[:]
@@ -64,7 +67,7 @@ def create_configs_combinations():
     output = output[:]
 
     # form every possible combination of different parameters
-    combinations = list(itertools.product(*[data, model, selector, stopper, training, output]))
+    combinations = list(itertools.product(*[data, feature_extraction, model, selector, stopper, training, output]))
     print("Generating configs:", len(combinations), "combinations")
 
     for i, combo in enumerate(combinations):
@@ -76,41 +79,49 @@ def create_configs_combinations():
 def generate_yml(combo):
     param = {}
     param['DATA'] = [{'data': combo[0][0]}]
-    param['MODEL'] = [{'module': combo[1][0]}, {'class': combo[1][1]}, {'parameters': None}]
-    param['SELECTOR'] = [{'module': combo[2][0]}, {'class': combo[2][1]}, {'parameters': None}]
-    param['STOPPER'] = [{'module': combo[3][0]}, {'class': combo[3][1]}, {'parameters': None}]
-    param['TRAINING'] = [{'batch proportion': float(combo[4][0])}, {'confidence': float(combo[4][1])},
-                         {'verbose': combo[4][2]}]
-    param['OUTPUT'] = [{'output path': combo[5][0]}, {'output metrics': combo[5][1]}]
+    param['FEATURE EXTRACTION'] = [{'module': combo[1][0]}, {'class': combo[1][1]}, {'parameters': combo[1][2]}]
+    param['MODEL'] = [{'module': combo[2][0]}, {'class': combo[2][1]}, {'parameters': combo[2][2]}]
+    param['SELECTOR'] = [{'module': combo[3][0]}, {'class': combo[3][1]}, {'parameters': combo[2][2]}]
+    param['STOPPER'] = [{'module': combo[4][0]}, {'class': combo[4][1]}, {'parameters': combo[2][2]}]
+    param['TRAINING'] = [{'batch proportion': float(combo[5][0])}, {'confidence': float(combo[5][1])}, {'verbose': combo[5][2]}]
+    param['OUTPUT'] = [{'output path': combo[6][0]}, {'output metrics': combo[6][1]}]
     return param
-
-
 
 
 def read_config_directory(directory, argument_names):
     config_names = []
     config_args = []
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            config_name, config_file_type = process_file_string(filename)
-            args = read_config(f, config_name, config_file_type, argument_names)
+
+    # singular config file
+    arg_path, arg_name, arg_type = process_file_path(directory)
+    if arg_type:
+        args, config_name = read_config(directory, argument_names)
+        if args:
+            config_args.append(args)
+            config_names.append(config_name)
+    # config directory
+    else:
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            args, config_name = read_config(f, argument_names)
             if args:
                 config_args.append(args)
                 config_names.append(config_name)
-        else:
-            continue
     return config_names, config_args
 
 
-def read_config(config_file, config_name, config_type, argument_names):
-    args = None
-    if config_type == 'yml':
-        args = read_yml(config_file, argument_names)
-    else:
-        warnings.warn("Config file {config} is not supported, try yaml".format(config=config_name))
-    return args
+def read_config(f, argument_names):
+    # checking if it is a file
+    if os.path.isfile(f):
+        config_path, config_name, config_file_type = process_file_path(f)
+        args = None
+        if config_file_type == '.yml':
+            args = read_yml(f, argument_names)
+        else:
+            warnings.warn("Config file {config} is not supported, try .yml".format(config=config_name))
+        if args:
+            return args, config_name
+    return None, None
 
 
 def read_yml(config_file, argument_names):

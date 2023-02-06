@@ -47,7 +47,7 @@ def main():
     output_name = str(datetime.now())
 
     # get desired parameters for training
-    arg_names, args = parse_CLI(["DATA", "MODEL", "SELECTOR", "STOPPER", "TRAINING", "OUTPUT", "CLUSTERING"])
+    arg_names, args = parse_CLI(["DATA", "FEATURE EXTRACTION", "MODEL", "SELECTOR", "STOPPER", "TRAINING", "OUTPUT", "CLUSTERING"])
     params = create_clustering_params(arg_names, args)
     pp = pprint.PrettyPrinter()
     print()
@@ -56,19 +56,19 @@ def main():
 
     for i, param in enumerate(params):
         # make output directory
-        output_directory = param['output_path'] + "/" + output_name
+        output_directory = os.path.join(param['output_path'], output_name)
         if not os.path.isdir(output_directory):
             os.makedirs(output_directory)
 
         # make folder for each config
-        output_path = output_directory + '/' + param['name']
+        output_path = os.path.join(output_directory, param['name'])
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
 
         # set randomisation seed
         np.random.seed(0)
         # get datasets
-        datasets = get_datasets(param['data'][0], param['data'][1], working_directory, param['data'][2])
+        datasets = get_datasets(*param['data'], output_directory, param['feature_extraction'])
         n = 3
         for j, data in enumerate(datasets):
             output_path = "{path}/{config}_data_{data}.mp4".format(path=output_path, config=param['name'], data=j)

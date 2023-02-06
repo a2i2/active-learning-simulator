@@ -6,7 +6,7 @@ import yaml
 import warnings
 
 from config import read_config_directory
-from data_extraction import process_file_string
+from data_extraction import process_file_path
 
 
 # TODO more config layers: specify parameters, use names for named arguments!
@@ -33,7 +33,7 @@ def parse_CLI(argument_names):
 def create_simulator_params(config_names, config_args):
     params = []
     for i, config_arg in enumerate(config_args):
-        param = get_params(config_arg[0], config_arg[1:4], config_arg[4], config_arg[5])
+        param = get_params(config_arg[0], config_arg[1], config_arg[2:5], config_arg[5], config_arg[6])
         param['name'] = config_names[i]
         params.append(param)
     return params
@@ -42,27 +42,34 @@ def create_simulator_params(config_names, config_args):
 def create_clustering_params(config_names, config_args):
     params = []
     for i, config_arg in enumerate(config_args):
-        param = get_params(config_arg[0], config_arg[1:4], config_arg[4], config_arg[5])
+        param = get_params(config_arg[0], config_arg[1], config_arg[2:5], config_arg[5], config_arg[6])
         param['name'] = config_names[i]
         params.append(param)
         param['clusterer'] = get_clustering_params(config_arg[6])
     return params
 
-def get_params(data_args, algorithm_args, training_args, output_args):
+
+def get_params(data_args, feature_args, algorithm_args, training_args, output_args):
     """
     Forms program parameters from arguments, including desired object classes and hyperparameters
 
-    :param output_args:
     :param data_args: name of datasets directory or compressed file
+    :param feature_args:
     :param algorithm_args: names of methods and any desired parameters
     :param training_args: parameters for training, evaluator, and verbosity
+    :param output_args:
     :return:
     """
     # specify dataset
-    data_name, data_file_type = process_file_string(data_args['data'][0])
+    data_path, data_name, data_file_type = process_file_path(data_args['data'][0])
     data_number = -1
     if len(data_args['data']) > 1:
         data_number = int(data_args['data'][1])
+
+    feature_params = None
+    if feature_args['module'] != ['None'] and feature_args['class'] != ['None']:
+        feature_params = get_algorithm_params_file(feature_args, 'feature extraction')
+    print(feature_params)
 
     # training hyperparameters
     try:
@@ -105,7 +112,8 @@ def get_params(data_args, algorithm_args, training_args, output_args):
     output_metrics_args = output_args['output metrics']
 
     # compile parameters
-    params = {'data': (data_name, data_file_type, data_number),
+    params = {'data': (data_path, data_name, data_file_type, data_number),
+              'feature_extraction': feature_params,
               'batch_proportion': batch_proportion,
               'confidence': confidence,
               'model': model_params + (model_verbosity,),
@@ -139,7 +147,11 @@ def get_algorithm_params_file(args, key):
     if params == ['None'] or params == ['null']:
         params = []
 
-    module = importlib.import_module(module_name)
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        raise Exception("{key} module could not be found: {name}".format(key=key, name=module_name)) from None
+
     try:
         class_ = getattr(module, class_name)
     except AttributeError:
