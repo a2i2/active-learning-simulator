@@ -12,6 +12,9 @@ from datetime import datetime
 working_directory = './'
 
 
+# TODO: copy config file to output too. Also log command line prompt if more complicated
+
+
 def simulate():
     """
     Main handler for running the simulation program
@@ -53,6 +56,11 @@ def simulate():
         output_path = os.path.join(output_directory, param['name'])
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
+
+        # output config parameters
+        output_name = "{path}/{name}.json".format(path=output_path, name="config_parameters")
+        with open(output_name, 'w') as f:
+            json.dump(param, f, cls=ParamEncoder)
 
         # get datasets to train the program on
         datasets = get_datasets(*param['data'], output_directory, param['feature_extraction'])
@@ -177,6 +185,11 @@ def run_model(data, params):
     active_learner.train(data['train'])
 
     return active_learner
+
+
+class ParamEncoder(json.JSONEncoder):
+    def default(self, param):
+        return {'module': param.__module__, 'class': param.__name__}
 
 
 def save_output_text(string, output_path, file_name):

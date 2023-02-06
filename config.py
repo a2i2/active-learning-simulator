@@ -20,7 +20,7 @@ def create_configs_combinations():
     :return:
     """
     # create options
-    # data format: "data_directory num_datasets_to_screen"
+    # data format: "data_directory num_datasets_to_screen(optional)"
     data = [["datasets"]]
 
     feature_extraction = [("tfidf", "TFIDF", 10000)]
@@ -49,7 +49,7 @@ def create_configs_combinations():
     # output format: ("output_path", "desired metrics separated by spaces")
     output = [("outputs", "true_recall model_recall stopper selector model")]
 
-    # combine training parameters: cycle the smallest list of parameters
+    # combine training parameters: cycle the smallest list of parameters!
     training = list(zip(batch_proportions, confidence, cycle(verbosity)))
 
     # parse command line arguments
