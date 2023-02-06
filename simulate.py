@@ -10,10 +10,15 @@ from evaluator import *
 from datetime import datetime
 
 working_directory = './'
-# TODO add 95% recall line to plots
 
 
 def simulate():
+    """
+    Main handler for running the simulation program
+    Obtains desired parameters from configurations and executions active learner, outputs evaluation results.
+
+    :return:
+    """
     try:
         _create_unverified_https_context = ssl._create_unverified_context
     except AttributeError:
@@ -90,12 +95,21 @@ def simulate():
 
 
 class Config:
+    """
+    Helper class for storing evaluation metrics between configuration results
+    """
     def __init__(self, param):
         self.metrics = []
         self.param = param
         pass
 
     def update_metrics(self, active_learners):
+        """
+        Updates the metrics of the Config object
+
+        :param active_learners: trained active learner object
+        :return:
+        """
         recalls = []
         work_saves = []
         for AL in active_learners:
@@ -114,6 +128,12 @@ class Config:
 
     @staticmethod
     def evaluate_configs(configs):
+        """
+        Compile results of different configurations and visualise comparison
+
+        :param configs: Config objects
+        :return: axes of the comparative plots
+        """
         metrics = []
         axs = []
         for i, metric in enumerate(configs[0].metrics):
@@ -130,6 +150,7 @@ class Config:
 def run_model(data, params):
     """
     Creates algorithm objects and runs the active learning program
+
     :param data: dataset for systematic review labelling
     :param params: input parameters for algorithms and other options for training
     :return: returns the evaluator and stopper objects trained on the dataset
@@ -137,7 +158,6 @@ def run_model(data, params):
     N = len(data['train'])
     # determine suitable batch size, batch size increases with increases dataset size
     batch_size = int(params['batch_proportion'] * N) + 1
-    # TODO different batch sizes? as a parameter
 
     # create algorithm objects
     model_AL = params['model'][0](*params['model'][1])

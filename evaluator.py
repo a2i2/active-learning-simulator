@@ -7,6 +7,10 @@ import pandas as pd
 
 
 class Evaluator:
+    """
+    Evaluator object handles the storing and outputting of training results.
+    Updated each iteration of active learning.
+    """
     def __init__(self, data, verbose=True):
         self.N = len(data)  # total number of documents in dataset
         self.r_total = sum(data['y'])  # total number of actual relevants in dataset
@@ -29,6 +33,7 @@ class Evaluator:
     def initialise(self, sample, test_data):
         """
         Initialise evaluator object
+
         :param sample: initial dataset sample
         :param test_data: testing data (full dataset)
         """
@@ -64,6 +69,7 @@ class Evaluator:
     def output_results(self, model, test_data):
         """
         Print results to console.
+
         :param model: trained Machine Learning model
         :param test_data: testing data (full dataset)
         :return:
@@ -88,6 +94,14 @@ class Evaluator:
 
 
 def output_results(active_learners, output_path, output_metrics=None):
+    """
+    Handler for outputting training results to file
+
+    :param active_learners: training active learner objects
+    :param output_path: directory to output results
+    :param output_metrics: list of custom metrics to output from configuration specification
+    :return:
+    """
     if output_metrics is None:
         output_metrics = []
     overall = [{'name': 'work save - recall', 'x': ('work_save', []), 'y': ('recall', []), 'colours': []}]
@@ -158,7 +172,7 @@ def output_results(active_learners, output_path, output_metrics=None):
                 ax = metric_plot(result)
                 ax.figure.savefig("{path}/{metric}.png".format(path=output_dataset_path, metric=result['name']), dpi=300)
 
-    #
+    # compute metrics for config comparison
     recalls = overall[0]['y'][1]
     mean_recall = sum(recalls) / len(recalls)
     min_recall = min(recalls)
@@ -169,10 +183,12 @@ def output_results(active_learners, output_path, output_metrics=None):
 
     overall.append({'mean_recall': mean_recall, 'min_recall': min_recall, 'mean_work_save': mean_work_save, 'min_work_save': min_work_save})
 
+    # output overall results from config comparison to file
     output_name = "{path}/{name}.json".format(path=output_path, name="overall")
     with open(output_name, 'w') as f:
         json.dump(overall, f)
 
+    # visualise and output config comparison results
     ax = scatter_plot(overall[0], colour_label=overall[0]['colours'], marginal=True)
     ax.write_html("{path}/{fig_name}.html".format(path=output_path, fig_name="overall"))
 
@@ -182,6 +198,7 @@ def visualise_results(evaluators):
     Visualise the results across several datasets
 
     :param evaluators: list of evaluators, one for each dataset training
+    :return: visualisation axes
     """
     recalls = np.zeros(shape=(len(evaluators), 1))
     work_saves = np.zeros(shape=(len(evaluators), 1))
@@ -216,13 +233,17 @@ def visualise_results(evaluators):
     # create colour bar
     fig.colorbar(p, ax=ax)
 
-    # show and save plot to file
-    #plt.show()
-    #ax.figure.savefig('recall-work.png', dpi=300)
     return ax
 
 
 def visualise_configs(work_saves, recalls):
+    """
+    Visualise the results from a single configuration execution
+
+    :param work_saves: training results for work save over all datasets
+    :param recalls: training results for recall over all datasets
+    :return: visualisation axes of scatter plot
+    """
     N = len(work_saves)
     # normalise colours between 0-255
     colours = (np.arange(0, N)) / N * 255.0
@@ -244,13 +265,16 @@ def visualise_configs(work_saves, recalls):
     # create colour bar
     fig.colorbar(p, ax=ax)
 
-    # show and save plot to file
-    #plt.show()
-    # ax.figure.savefig('recall-work.png', dpi=300)
     return ax
 
 
 def visualise_metric(metric):
+    """
+    Visualise a training metric as scatter plot with distribution margins
+
+    :param metric: training metric of form {'name': plot_name, 'x': (x_label, x_values), 'y': (y_label, y_values)}
+    :return: visualisation axes of scatter plot
+    """
     N = len(metric['x'][1])
     # normalise colours between 0-255
     colours = (np.arange(0, N)) / N * 255.0
@@ -272,14 +296,13 @@ def visualise_metric(metric):
     # create colour bar
     fig.colorbar(p, ax=ax)
 
-    # show and return plot
-    #plt.show()
     return ax
 
 
 def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
     """
     Plots scatter plot with histograms showing distributions
+
     :param x: x-axis values
     :param y: y-axis values
     :param ax: axis object for plot
@@ -321,6 +344,15 @@ def scatter_hist(x, y, ax, colours, ax_histx, ax_histy):
 
 
 def scatter_plot(metric, colour_label="index", marginal=True, text=None):
+    """
+    Plots interactive plotly visualisation of a metric
+
+    :param metric: training metric of form {'name': plot_name, 'x': (x_label, x_values), 'y': (y_label, y_values)}
+    :param colour_label: list for plotly colour labels
+    :param marginal: boolean for specifying distribution margins
+    :param text: list of labels to display on hover
+    :return: visualisation axis for interactive scatter plot
+    """
     title = metric['name']
     marginals = ""
     if marginal:
@@ -329,15 +361,23 @@ def scatter_plot(metric, colour_label="index", marginal=True, text=None):
     x_label = metric['x'][0]
     y_label = metric['y'][0]
 
+    # create dataframe of results for plotly
     df = pd.DataFrame({x_label: metric['x'][1], y_label: metric['y'][1]})
     df = df.reset_index(level=0)
 
+    # form scatter plot
     fig = px.scatter(df, x=x_label, y=y_label, marginal_x=marginals, marginal_y=marginals, title=title, color=colour_label, hover_name=text)
-    #fig.update_traces(textposition='top center')
+
     return fig
 
 
 def metric_plot(metric):
+    """
+    Plots a metric as a line plot
+
+    :param metric: training metric of form {'name': plot_name, 'x': (x_label, x_values), 'y': (y_label, y_values)}
+    :return: visualisation axes of line plot
+    """
     title = metric['name']
     x_label = metric['x'][0]
     y_label = metric['y'][0]

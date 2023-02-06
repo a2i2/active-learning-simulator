@@ -1,21 +1,15 @@
-import math
-import pickle
 import re
 import warnings
 import zipfile
 import os
-
-import numpy
-import numpy as np
 import pandas as pd
-from tfidf import compute_TFIDF
 
 
 # TODO: dont feature extract when dataset available. Feature extract save to directory for data
 
 def get_datasets(data_path, data_name, data_file_type, max_datasets, output_directory, feature_extraction):
     """
-    Get data from different formats and file types. Loads from .zip, directory with csv datas, directory with pkl datas
+    Get data from different formats and file types. Loads from .zip, directory with csv datas, directory with pkl datas.
 
     :param data_path:
     :param data_name: name of the data directory or file
@@ -76,7 +70,7 @@ def get_datasets(data_path, data_name, data_file_type, max_datasets, output_dire
 
 def extract_datasets(datasets_name, dest_path):
     """
-    Extract zipped datasets
+    Extract zipped datasets.
 
     :param datasets_name: file name of the datasets
     :param dest_path: destination file path to extract to
@@ -89,7 +83,7 @@ def extract_datasets(datasets_name, dest_path):
 
 def load_csv_data(data_path, index_name, feature_names, label_name):
     """
-    Loads dataset from csv file
+    Loads dataset from csv file.
 
     :param data_path: file path of the dataset
     :param index_name: header name of the column to index with
@@ -104,7 +98,7 @@ def load_csv_data(data_path, index_name, feature_names, label_name):
 
 def process_file_string(file_string):
     """
-    Processes file name, splits into name and file type
+    Processes file name, splits into name and file type.
 
     :param file_string: name of the file
     :return: extracted name and file type
@@ -120,7 +114,7 @@ def process_file_string(file_string):
 
 def process_file_path(file_string):
     """
-    Processes file name, splits into name and file type
+    Processes file name, splits into name and file type.
 
     :param file_string: name of the file
     :return: extracted name and file type

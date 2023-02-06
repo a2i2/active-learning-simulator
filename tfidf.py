@@ -26,6 +26,7 @@ class TFIDF(FeatureExtractor):
 def prep_raw_data(data):
     """
     Handler for data cleaning and preprocessing
+
     :param data: pandas DataFrame to prepare
     :return: cleaned and preprocessed DataFrame
     """
@@ -39,6 +40,7 @@ def clean_data(data):
     """
     Cleans dataset features (text) by removing stopwords, punctuation, repeated characters, and other irrelevant
     text articles
+
     :param data: pandas DataFrame to clean
     :return: DataFrame with cleaned feature texts
     """
@@ -75,7 +77,7 @@ def download_nltk_stopwords():
 
 def download_nltk_wordnet():
     """
-    Downlaods NLTK wordnet if not already present
+    Downloads NLTK wordnet if not already present
     """
     try:
         lemmatizer = nltk.WordNetLemmatizer()
@@ -87,6 +89,7 @@ def download_nltk_wordnet():
 def stem_lem_and_token(data):
     """
     Applies tokenisation, stemming and lemmatisation to data features
+
     :param data: pandas DataFrame to prepare
     :return: prepared DataFrame
     """
@@ -104,6 +107,7 @@ def stem_lem_and_token(data):
 def join_data_text(data_split):
     """
     Joins text back together after stemming and lemmatisation
+
     :param data_split: list of words
     :return: joined text string
     """
@@ -115,6 +119,7 @@ def join_data_text(data_split):
 def remove_stopwords(text, stop_words):
     """
     Removes a set of stopwords from a text
+
     :param text: raw text string
     :param stop_words: list of stopwords to remove
     :return: new text string without stopwords
@@ -125,6 +130,7 @@ def remove_stopwords(text, stop_words):
 def separate_punctuation(text, rem_punc, keep_punc):
     """
     Removes punctuation from text
+
     :param text: raw text
     :param rem_punc: punctuation to remove
     :param keep_punc: punctuation to retain
@@ -142,6 +148,7 @@ def separate_punctuation(text, rem_punc, keep_punc):
 def remove_repeated_character(text):
     """
     Removes repeated characters, particularly for non-standard English
+
     :param text: raw text string
     :return: cleaned text
     """
@@ -151,6 +158,7 @@ def remove_repeated_character(text):
 def remove_misc(text):
     """
     Removes tags, URLs, and numbers from a text
+
     :param text: raw text string
     :return: new text without undesired articles
     """
@@ -163,6 +171,7 @@ def remove_misc(text):
 def stemming(text):
     """
     Applies stemming to text to reduce variations of core words
+
     :param text: raw text string
     :return: stemmed text string
     """
@@ -174,6 +183,7 @@ def stemming(text):
 def lemmatizer(text):
     """
     Applies lemmatisation to text to reduce variations of core words
+
     :param text: raw text string
     :return: lemmatised text string
     """
@@ -185,6 +195,7 @@ def lemmatizer(text):
 def compute_TFIDF(data, max_features):
     """
     Computes the term frequency inverse document frequency feature representation for a text dataset
+
     :param data: pandas DataFrame with text features
     :param max_features: maximum number of TF-IDF features to extract
     :return: new DataFrame dataset with TF-IDF features 'x'
@@ -206,6 +217,7 @@ def compute_TFIDF(data, max_features):
 def TFIDF_vectorise_data(x, max_features):
     """
     Fits a TF-IDF vectoriser to input texts
+
     :param x: list of text features for training
     :param max_features: maximum number of features to extract
     :return: trained TF-IDF vectoriser

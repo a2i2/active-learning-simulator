@@ -2,6 +2,11 @@ DATA:
   - data: data 1
   - feature extraction: work in progress?
 
+FEATURE EXTRACTION:
+  - module: tfidf
+  - class: TFIDF
+  - parameters: 1000
+
 MODEL:
   - module: model_algorithms.NB
   - class: NB

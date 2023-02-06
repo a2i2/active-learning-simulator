@@ -4,6 +4,17 @@ from tqdm import tqdm
 
 
 class ActiveLearner:
+    """
+    Main active learner object to handle AL training for systematic reviews
+
+    Methods:
+
+    - train: handler function for training
+    - initialise: initialise active learner attributes for training on a dataset
+    - initial_sampling: executes initial stage of training
+    - active_learn: executes main active learning loop
+    - random_learn: executes a random sampling learning loop if desired by the stopping criteria
+    """
     def __init__(self, model, selector, stopper, batch_size=10, max_iter=100, evaluator=None, verbose=False):
         self.relevant_mask = None
         self.indice_mask = None

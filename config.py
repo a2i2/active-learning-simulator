@@ -13,6 +13,12 @@ from data_extraction import process_file_path
 
 
 def create_configs_combinations():
+    """
+    Systematically create multiple configuration files from all possible combinations of desired parameter options.
+    Specify the available options below, following the general configuration file format
+
+    :return:
+    """
     # create options
     # data format: "data_directory num_datasets_to_screen"
     data = [["datasets"]]
@@ -77,6 +83,12 @@ def create_configs_combinations():
 
 
 def generate_yml(combo):
+    """
+    Create yml style dictionary for the parameters
+
+    :param combo: parameter combination
+    :return: dictionary of parameters with keys corresponding to the configuration file format
+    """
     param = {}
     param['DATA'] = [{'data': combo[0][0]}]
     param['FEATURE EXTRACTION'] = [{'module': combo[1][0]}, {'class': combo[1][1]}, {'parameters': combo[1][2]}]
@@ -89,6 +101,13 @@ def generate_yml(combo):
 
 
 def read_config_directory(directory, argument_names):
+    """
+    Read in configuration directory of multiple configuration files
+
+    :param directory: name of the configuration directory
+    :param argument_names: name of the keys in the configuration files
+    :return: configuration name and arguments
+    """
     config_names = []
     config_args = []
 
@@ -111,6 +130,13 @@ def read_config_directory(directory, argument_names):
 
 
 def read_config(f, argument_names):
+    """
+    Read in configuration file into arguments
+
+    :param f: path of the configuration file
+    :param argument_names: name of the keys in the configuration files
+    :return: configuration arguments, name
+    """
     # checking if it is a file
     if os.path.isfile(f):
         config_path, config_name, config_file_type = process_file_path(f)
@@ -127,6 +153,7 @@ def read_config(f, argument_names):
 def read_yml(config_file, argument_names):
     """
     Reads a yaml configuration file and provides the relevant simulation parameters
+
     :param argument_names:
     :param config_file: file path of the configuration file
     :return: data, algorithm, and training parameters
@@ -142,6 +169,7 @@ def read_yml(config_file, argument_names):
 def combine_dict_list(dlist):
     """
     Helper function for parsing yaml files. Combines list into single dictionary
+
     :param dlist: list of dictionaries
     :return: single flattened dictionary
     """
@@ -166,4 +194,3 @@ def process_config_args(args):
 
 if __name__ == '__main__':
     create_configs_combinations()
-

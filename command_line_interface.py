@@ -1,20 +1,16 @@
 import argparse
 import importlib
 import importlib.util
-import os
-import yaml
-import warnings
 
 from config import read_config_directory
 from data_extraction import process_file_path
 
 
-# TODO more config layers: specify parameters, use names for named arguments!
-
 # handle input arguments: specify model name + parameters
 def parse_CLI(argument_names):
     """
     Parses command line arguments into program parameters and algorithms
+
     :return: parameters for the program, model selector_algorithms stopper evaluator etc.
     """
     # add optional arguments to look for
@@ -31,6 +27,13 @@ def parse_CLI(argument_names):
 
 
 def create_simulator_params(config_names, config_args):
+    """
+    Handler for simulate.py parameters
+
+    :param config_names: names of the configurations
+    :param config_args: parsed configuration arguments with DATA, FEATURE EXTRACTION, MODEL, SELECTOR, STOPPER, TRAINING, OUTPUT
+    :return: parameters object containing parsed parameters from config files
+    """
     params = []
     for i, config_arg in enumerate(config_args):
         param = get_params(config_arg[0], config_arg[1], config_arg[2:5], config_arg[5], config_arg[6])
@@ -40,6 +43,13 @@ def create_simulator_params(config_names, config_args):
 
 
 def create_clustering_params(config_names, config_args):
+    """
+    Handler for cluster_evaluation.py parameters
+
+    :param config_names: names of the configurations
+    :param config_args: parsed configuration arguments with DATA, FEATURE EXTRACTION, MODEL, SELECTOR, STOPPER, TRAINING, OUTPUT, CLUSTERING
+    :return: parameters object containing parsed parameters from config files
+    """
     params = []
     for i, config_arg in enumerate(config_args):
         param = get_params(config_arg[0], config_arg[1], config_arg[2:5], config_arg[5], config_arg[6])
@@ -58,7 +68,7 @@ def get_params(data_args, feature_args, algorithm_args, training_args, output_ar
     :param algorithm_args: names of methods and any desired parameters
     :param training_args: parameters for training, evaluator, and verbosity
     :param output_args:
-    :return:
+    :return: parsed parameters from the config arguments for active learning training
     """
     # specify dataset
     data_path, data_name, data_file_type = process_file_path(data_args['data'][0])
@@ -140,6 +150,13 @@ def get_algorithm_params(algorithm_args, key):
 
 
 def get_algorithm_params_file(args, key):
+    """
+    Parse config argument for retrieving a module class and optional parameter specification
+
+    :param args: config arguments
+    :param key: name of the key, e.g. 'model' or 'stopper'
+    :return: class to instantiate, optional parameters
+    """
     # sample selection method parameters
     module_name = args['module'][0]
     class_name = args['class'][0]
@@ -160,6 +177,12 @@ def get_algorithm_params_file(args, key):
 
 
 def get_clustering_params(clustering_args):
+    """
+    Parse config argument for retrieving clusterer object
+
+    :param clustering_args: config arguments for clustering evaluation
+    :return: class to instantiate, optional parameters
+    """
     clusterer_module = importlib.import_module('clusterer')
     try:
         clusterer_ = getattr(clusterer_module, clustering_args['clusterer'][0])
