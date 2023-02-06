@@ -8,17 +8,28 @@ Intended to assist the Living Knowledge project, this simulator performs systema
 ## Using the simulator
 Ensure datasets are present in the desired working directory and in the correct [format](#compatible-datasets)
 
-### Running the program with command line arguments
+### Running simulation with command line arguments
 Install dependencies from requirements.txt file:
 ```commandline
 pip install -r requirements.txt
 ```
 
-Execute the simulate.py program, specify the directory / compressed file containing all configs files to be used.
+Execute the simulate.py program
 Example command line instruction:
 ```commandline
 python simulate.py configs_directory
 ```
+- ```configs_directory```  specify the directory / compressed file containing all configs files to be used
+
+### Running simulation from bash script
+Support for multiprocessing using bash, see example [here](test.sh).
+
+To collate results from different experiments together, run the [collate_experiments](collate_experiments.py) program as follows:
+```commandline
+python collate_experiments.py experiments_directory output_file_name
+```
+- ```experiments_directory``` contains each experiment's output (each execution of the program)
+- ```output_file_name``` specifies the (shared) name of the desired json metrics, default "overall.json"
 
 ## Config file keys
 
@@ -29,6 +40,15 @@ Parameters for selecting the desired training datasets.
 |  name  | description                             | options             | optional parameters              |
 |:------:|-----------------------------------------|---------------------|----------------------------------|
 | `data` | specify the name of the datasets folder | (dataset directory) | (int) number of datasets to test |
+---
+### *```FEATURE EXTRACTION:```*
+Parameters for feature extraction if required by the dataset.
+
+|     name     | description                       | Current (corresponding) options |
+|:------------:|-----------------------------------|---------------------------------|
+|   `module`   | name of the module (python file)  | tfidf                           |
+|   `class`    | name of the class to instantiate  | TFIDF                           |
+| `parameters` | optional parameters for the class | (int) number of features        |
 ---
 ### *```MODEL, SELECTOR, STOPPER:```*
 Parameters common to the model, selector, and stopper config keys.
@@ -63,7 +83,11 @@ Output location and metric specifications.
 # .yml
 DATA:
   - data: data 11
-  - feature extraction: work in progress...
+
+FEATURE EXTRACTION:
+  - module: tfidf
+  - class: TFIDF
+  - parameters: 1000
 
 MODEL:
   - module: model_algorithms.NB
@@ -156,8 +180,8 @@ Example config visualisation (also available as interactive .html):
 
 <img src="assets/recall_work.png" width="50%"  alt="config visualisation"/>
 
-- Each point corresponds to a dataset
-- Colours represent the number of documents in the dataset
+- each point corresponds to a dataset
+- colours represent the number of documents in the dataset
 
 
 ### Config comparison
@@ -170,6 +194,11 @@ Metrics for comparing configurations
 Example config comparison visualisation (interactive html):
 
 <img src="assets/compare_configs.png" width="80%"  alt="metric visualisation"/>
+
+- each point corresponds to a configuration 
+- colour represents to index of the configuration file in the list of configurations
+- interactive plot: can hover over points for the configuration name, metric values
+
 
 ## Data handling
 
