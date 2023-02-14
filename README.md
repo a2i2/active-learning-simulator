@@ -77,7 +77,7 @@ Output location and metric specifications.
 | `output metrics` | list of metrics names to visualise               | *any number of:* <br /> documents_sampled <br /> relevants_sampled <br /> documents_seen <br /> relevants_seen <br /> true_recall <br /> true_work_save <br /> model_recall <br /> screened_indices <br /> model <br /> selector <br /> stopper |
 ---
 
-### Config examples
+### Config example
 
 ```yaml
 # .yml
@@ -151,6 +151,13 @@ Refer to class specification sections [below](#al-model-framework) for descripti
 
 
 ## Outputs
+A full precomputed output can be found [here](https://doi.org/10.6084/m9.figshare.22091339).
+
+Simulation was conducted with 120 different configurations of hyper-parameters and algorithms (these configurations are also included).
+Note: it was executed a single config at a time for multiprocessing: 
+the results of each execution were collated together separately (see the [bash script execution](#running-simulation-from-bash-script) section for details).
+
+
 ### Training metrics
 Metrics stored during training of each dataset:
 - ```documents_sampled```: number of documents sampled each iteration
