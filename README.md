@@ -1,7 +1,7 @@
 ![active learning pipeline](assets/robot.png)
 
 # Simulator for Active Learning
-Intended to assist the Living Knowledge project, this simulator performs systematic review labelling using an Active Learning approach. Various algorithms and methods can be implemented and their efficacy evaluated with respect to different datasets.
+This simulator performs systematic review labelling using an Active Learning approach. Various algorithms and methods can be implemented and their efficacy evaluated with respect to different datasets.
 
 ![active learning pipeline](assets/pipeline.png)
 
